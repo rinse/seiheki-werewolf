@@ -1,0 +1,70 @@
+name:                seiheki-werewolf
+version:             0.1.0.0
+github:              "rinse/seiheki-werewolf"
+license:             BSD3
+author:              "rinse"
+maintainer:          "rinse@neko2.net"
+copyright:           "2020 rinse"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/rinse/seiheki-werewolf#readme>
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wredundant-constraints
+
+dependencies:
+- base >= 4.7 && < 5
+- servant
+
+library:
+  source-dirs: src
+
+executables:
+  seiheki-werewolf-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - seiheki-werewolf
+
+tests:
+  seiheki-werewolf-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - seiheki-werewolf
+    - hspec >= 2.7.0
+
+  seiheki-werewolf-doctest:
+    main:                Spec.hs
+    source-dirs:         doctest
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - seiheki-werewolf
+    - doctest >= 0.16
+    - doctest-discover >= 0.2.0
+    - QuickCheck >= 2.13
