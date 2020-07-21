@@ -28,7 +28,11 @@ ghc-options:
 
 dependencies:
 - base >= 4.7 && < 5
+- bytestring
+- http-media
 - servant
+- servant-server
+- warp
 
 library:
   source-dirs: src
