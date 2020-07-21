@@ -1,4 +1,7 @@
 module Main where
 
+import Server
+
+
 main :: IO ()
-main = putStrLn "Hello, seiheki-werewolf!"
+main = runServer
