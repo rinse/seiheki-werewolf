@@ -27,11 +27,18 @@ ghc-options:
 - -Wredundant-constraints
 
 dependencies:
+- aeson
 - base >= 4.7 && < 5
 - bytestring
+- http-api-data
 - http-media
+- mtl
+- random-shuffle
 - servant
 - servant-server
+- safe-exceptions
+- stm
+- text
 - warp
 
 library:
