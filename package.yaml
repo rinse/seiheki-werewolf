@@ -35,6 +35,7 @@ dependencies:
 - deepseq
 - http-api-data
 - http-media
+- MonadRandom
 - mtl
 - random-shuffle
 - servant
@@ -71,6 +72,7 @@ tests:
     dependencies:
     - seiheki-werewolf
     - hspec >= 2.7.0
+    - random
 
   seiheki-werewolf-doctest:
     main:                Spec.hs

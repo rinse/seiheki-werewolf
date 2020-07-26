@@ -1,7 +1,14 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
 
-module Werewolf.RoomDB where
+module Werewolf.RoomDB
+    ( RoomDB (..)
+    , emptyDB
+    , withRoomDB
+    , PutThemeInfo (..)
+    , AddThemeInfo (..)
+    , ViewThemeInfo (..)
+    ) where
 
 import           Control.Exception.Safe
 import           Control.Monad.IO.Class

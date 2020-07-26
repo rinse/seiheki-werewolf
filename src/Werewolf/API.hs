@@ -24,6 +24,7 @@ type API = Get '[HTML] BL.ByteString
     :<|> "v2" :> "room" :> Capture "id" UUID :> Get '[HTML] BL.ByteString
     :<|> "v2" :> "room" :> Capture "id" UUID :> "theme-info" :> ReqBody '[JSON, FormUrlEncoded] ThemeInfo :> Post '[JSON] ()
     :<|> "v2" :> "room" :> Capture "id" UUID :> "theme-info" :> "top" :> Get '[JSON] ThemeInfo
+    :<|> "v2" :> "room" :> Capture "id" UUID :> "shuffle" :> Post '[JSON] ()
     :<|> "v2" :> "room" :> Capture "id" UUID :> "next" :> Post '[JSON] ()
     :<|> "v2" :> "room" :> Capture "id" UUID :> "all" :> Get '[JSON] [ThemeInfo]
 

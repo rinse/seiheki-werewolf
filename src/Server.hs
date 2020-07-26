@@ -8,10 +8,13 @@ import           Control.Exception.Safe    (MonadCatch, MonadThrow, catchAny,
                                             throw)
 import           Control.Monad
 import           Control.Monad.Cont
+import           Control.Monad.Random.Class
 import           Control.Monad.State.Class (get, put)
-import           Data.Acid                 (query, update)
+import           Data.Acid                 (query, update, AcidState)
 import           Data.Aeson.Text           (encodeToLazyText)
 import qualified Data.ByteString.Lazy      as BL
+import           Data.Function             (on)
+import           Data.List
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import qualified Data.Text.IO              as T
@@ -74,6 +77,12 @@ loadTheme = loadBackup >>= put
 dispose :: Werewolf ()
 dispose = put []
 
+viewThemeInfo :: MonadIO m => AcidState RoomDB -> UUID -> m [ThemeInfo]
+viewThemeInfo roomDB roomId = liftIO $ query roomDB (ViewThemeInfo $ toText roomId)
+
+putThemeInfo :: MonadIO m => AcidState RoomDB -> UUID -> [ThemeInfo] -> m ()
+putThemeInfo roomDB roomId themeInfo = liftIO . update roomDB $ PutThemeInfo (toText roomId, themeInfo)
+
 createRoom :: Werewolf UUID
 createRoom = do
     roomId <- liftIO nextRandom
@@ -102,6 +111,29 @@ getTop roomId = do
         themeInfo <- liftIO $ query roomDB (ViewThemeInfo $ toText roomId)
         ret <- maybe throwNoThemeError return $ headMaybe themeInfo
         return $ force ret
+
+{-|Groups a given List by a Function and shuffle elements of each group.
+>>> import Control.Monad.Random
+>>> import System.Random
+>>> :{
+    let gen = mkStdGen 0
+        input = [("en","Hello"),("fr","Bonjour"),("sp","Hola"),("en","Good bye"),("fr","Au revoir"),("sp","Hasta la vista")]
+     in runRand (groupedShuffle fst input) gen
+    :}
+([("en","Good bye"),("fr","Au revoir"),("sp","Hasta la vista"),("fr","Bonjour"),("sp","Hola"),("en","Hello")],1962667596 535353314)
+-}
+groupedShuffle :: (MonadRandom m, Ord b) => (a -> b) -> [a] -> m [a]
+groupedShuffle f list = do
+    let sorted = sortBy (compare `on` f) list
+        grouped = groupBy ((==) `on` f) sorted
+    fmap join $ traverse shuffleM grouped >>= traverse shuffleM . transpose
+
+shuffleTheme' :: UUID -> Werewolf ()
+shuffleTheme' roomId = flip runContT return $ do
+    roomDB <- ContT withRoomDB
+    viewThemeInfo roomDB roomId
+        >>= liftIO . groupedShuffle name
+        >>= putThemeInfo roomDB roomId
 
 nextTheme' :: UUID -> Werewolf ()
 nextTheme' roomId = do
@@ -133,6 +165,7 @@ server = showIndex
     :<|> showRoom
     :<|> appendThemeInfo
     :<|> getTop
+    :<|> shuffleTheme'
     :<|> nextTheme'
     :<|> showAll'
 
