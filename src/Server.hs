@@ -28,7 +28,7 @@ showIndex = liftIO $ BL.readFile "static/index.html"
 
 appendTheme :: ThemeInfo -> Werewolf ()
 appendTheme themeInfo = unless (T.null $ theme themeInfo) $ do
-    s <- (themeInfo:) <$> get
+    s <- (++ [themeInfo]) <$> get
     put s
     saveBackup s
 
