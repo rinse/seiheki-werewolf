@@ -27,18 +27,23 @@ ghc-options:
 - -Wredundant-constraints
 
 dependencies:
+- acid-state
 - aeson
 - base >= 4.7 && < 5
 - bytestring
+- containers
+- deepseq
 - http-api-data
 - http-media
 - mtl
 - random-shuffle
 - servant
 - servant-server
+- safecopy
 - safe-exceptions
 - stm
 - text
+- uuid
 - warp
 
 library:

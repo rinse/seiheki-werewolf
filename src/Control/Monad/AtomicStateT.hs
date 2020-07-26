@@ -5,7 +5,7 @@ module Control.Monad.AtomicStateT where
 
 import           Control.Concurrent.STM    (TVar, atomically, readTVar,
                                             readTVarIO, writeTVar)
-import           Control.Exception.Safe    (MonadCatch, MonadThrow)
+import           Control.Exception.Safe    (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Reader      (MonadTrans, ReaderT, ask,
                                             runReaderT)
@@ -14,7 +14,7 @@ import           Control.Monad.State.Class (MonadState, get, put)
 
 newtype AtomicStateT s m a = AtomicStateT
     { unAtomicStateT :: ReaderT (TVar s) m a
-    } deriving (Functor, Applicative, Monad, MonadIO, MonadTrans, MonadThrow, MonadCatch)
+    } deriving (Functor, Applicative, Monad, MonadIO, MonadTrans, MonadThrow, MonadCatch, MonadMask)
 
 runAtomicStateT :: MonadIO m => AtomicStateT s m a -> TVar s -> m (a, s)
 runAtomicStateT st s = (,) <$> runReaderT (unAtomicStateT st) s <*> liftIO (readTVarIO s)
