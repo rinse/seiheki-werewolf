@@ -80,6 +80,9 @@ dispose = put []
 viewThemeInfo :: MonadIO m => AcidState RoomDB -> UUID -> m [ThemeInfo]
 viewThemeInfo roomDB roomId = liftIO $ query roomDB (ViewThemeInfo $ toText roomId)
 
+addThemeInfo :: MonadIO m => AcidState RoomDB -> UUID -> [ThemeInfo] -> m ()
+addThemeInfo roomDB roomId themeInfo = liftIO . update roomDB $ AddThemeInfo (toText roomId, themeInfo)
+
 putThemeInfo :: MonadIO m => AcidState RoomDB -> UUID -> [ThemeInfo] -> m ()
 putThemeInfo roomDB roomId themeInfo = liftIO . update roomDB $ PutThemeInfo (toText roomId, themeInfo)
 
@@ -88,7 +91,7 @@ createRoom = do
     roomId <- liftIO nextRandom
     flip runContT return $ do
         roomDB <- ContT withRoomDB
-        liftIO $ update roomDB (AddThemeInfo (toText roomId, []))
+        addThemeInfo roomDB roomId []
     return roomId
 
 showRoom :: UUID -> Werewolf BL.ByteString
@@ -98,7 +101,7 @@ appendThemeInfo :: UUID -> ThemeInfo -> Werewolf ()
 appendThemeInfo roomId themeInfo =
     flip runContT return $ do
         roomDB <- ContT withRoomDB
-        liftIO . update roomDB $ AddThemeInfo (toText roomId, [themeInfo])
+        addThemeInfo roomDB roomId [themeInfo]
 
 headMaybe :: [a] -> Maybe a
 headMaybe []    = Nothing
@@ -108,7 +111,7 @@ getTop :: UUID -> Werewolf ThemeInfo
 getTop roomId = do
     flip runContT return $ do
         roomDB <- ContT withRoomDB
-        themeInfo <- liftIO $ query roomDB (ViewThemeInfo $ toText roomId)
+        themeInfo <- viewThemeInfo roomDB roomId
         ret <- maybe throwNoThemeError return $ headMaybe themeInfo
         return $ force ret
 
@@ -139,16 +142,16 @@ nextTheme' :: UUID -> Werewolf ()
 nextTheme' roomId = do
     flip runContT return $ do
         roomDB <- ContT withRoomDB
-        themeInfo <- liftIO $ query roomDB (ViewThemeInfo $ toText roomId)
+        themeInfo <- viewThemeInfo roomDB roomId
         case themeInfo of
             []     -> throwNoThemeError
-            (_:xs) -> liftIO . update roomDB $ PutThemeInfo (toText roomId, xs)
+            (_:xs) -> liftIO $ putThemeInfo roomDB roomId xs
 
 showAll' :: UUID -> Werewolf [ThemeInfo]
 showAll' roomId = do
     flip runContT return $ do
         roomDB <- ContT withRoomDB
-        themeInfo <- liftIO $ query roomDB (ViewThemeInfo $ toText roomId)
+        themeInfo <- liftIO $ viewThemeInfo roomDB roomId
         return $ force themeInfo
 
 server :: ServerT API Werewolf
