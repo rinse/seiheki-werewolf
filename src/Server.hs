@@ -95,7 +95,7 @@ createRoom = do
     return roomId
 
 showRoom :: UUID -> Werewolf BL.ByteString
-showRoom _ = liftIO $ BL.readFile "static/index.html"
+showRoom _ = liftIO $ BL.readFile "static/room.html"
 
 appendThemeInfo :: UUID -> ThemeInfo -> Werewolf ()
 appendThemeInfo roomId themeInfo =
