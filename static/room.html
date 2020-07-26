@@ -39,7 +39,7 @@
     <hr>
     <div class="container">
         <p>投票が済んだら答えを確認します。</p>
-        <div id="current-name" class="m-5"></div>
+        <div id="current-name" class="m-5" style="display:none"></div>
         <button id="get-current-name" type="button" class="btn btn-lg btn-secondary">答えを見る</button>
     </div>
 
@@ -88,23 +88,16 @@ $(() => {
         xhr.send();
         xhr.onreadystatechange = () => {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                const theme = JSON.parse(xhr.response).theme;
-                $('#current-theme').html($('<strong></strong>').text(`${theme}`));
-                $('#current-name').html('');
+                const themeInfo = JSON.parse(xhr.response);
+                $('#current-theme').html($('<strong></strong>').text(`${themeInfo.theme}`));
+                $('#current-name').hide();
+                $('#current-name').html($('<strong></strong>').text(`この性癖の持ち主は${themeInfo.name}さんです！！！`));
             }
         };
     });
 
     $('#get-current-name').click(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'theme-info/top', true);
-        xhr.send();
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                const name = JSON.parse(xhr.response).name;
-                $('#current-name').html($('<strong></strong>').text(`この性癖の持ち主は${name}さんです！！！`));
-            }
-        };
+        $('#current-name').show();
     });
 
     $('#shuffle-theme').click(() => {
