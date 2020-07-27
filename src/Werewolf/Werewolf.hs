@@ -4,7 +4,7 @@
 module Werewolf.Werewolf where
 
 import           Control.Concurrent.STM     (TVar)
-import           Control.Exception.Safe     (MonadCatch, MonadThrow)
+import           Control.Exception.Safe     (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.AtomicStateT (AtomicStateT, runAtomicStateT)
 import           Control.Monad.IO.Class     (MonadIO)
 import           Control.Monad.State.Class  (MonadState, get, put)
@@ -14,7 +14,7 @@ import           Werewolf.ThemeInfo         (ThemeInfo)
 
 newtype Werewolf a = Werewolf
     { unWerewolf :: AtomicStateT [ThemeInfo] Handler a
-    } deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch)
+    } deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch, MonadMask)
 
 runWerewolf :: Werewolf a -> TVar [ThemeInfo] -> Handler (a, [ThemeInfo])
 runWerewolf = runAtomicStateT . unWerewolf

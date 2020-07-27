@@ -10,52 +10,7 @@
 
 <div class="container text-center">
     <h1>性癖人狼</h1>
-    <p>名前と性癖を入力してください。性癖が揃ったらお題を確認してください。</p>
-    <div class="d-flex .flex-sm-row .justify-content-start">
-        <div class="container text-center">
-            <h2>性癖送信フォーム</h2>
-            <form>
-                <div class="form-group">
-                    <label>名前</label>
-                    <input id="name" name="name" type="text" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>性癖</label>
-                    <textarea id="theme" name="theme" type="text" class="form-control"></textarea>
-                </div>
-                <button id="send-theme" type="button" class="btn btn-primary">送信</button>
-            </form>
-        </div>
-    </div>
-
-    <hr>
-    <div class="container">
-        <p>性癖が集まったらお題を確認します。</p>
-        <p>お題: </p>
-        <div id="current-theme" class="m-5"></div>
-        <button id="get-current-theme" type="button" class="btn btn-lg btn-secondary">お題を見る</button>
-    </div>
-
-    <hr>
-    <div class="container">
-        <p>投票が済んだら答えを確認します。</p>
-        <div id="current-name" class="m-5"></div>
-        <button id="get-current-name" type="button" class="btn btn-lg btn-secondary">答えを見る</button>
-    </div>
-
-    <hr>
-    <div class="container">
-        <h2>遊び方</h2>
-        <p>カードに名前と性癖を書き、それを集めて山札を作ります。</p>
-        <p>全員の性癖が集まったら、山札をシャッフルして一番上をめくり、その性癖が誰のものかを当てます。</p>
-    </div>
-
-    <hr>
-    <div class="container">
-        <p>GM用ボタン</p>
-        <button id="shuffle-theme" type="button" class="btn btn-sm btn-info">お題をシャッフル</button>
-        <button id="next-theme" type="button" class="btn btn-sm btn-info">次のお題</button>
-    </div>
+    <button id="create-room" type="button" class="btn btn-lg btn-secondary">部屋を作る</button>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -64,60 +19,17 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery-autosize@1.18.18/jquery.autosize.min.js"></script>
 <script>
 $(() => {
-    $('#send-theme').click(() => {
-        const name = $('#name').val();
-        const theme = $('#theme').val();
-        const data = {name: name, theme: theme};
+    $('#create-room').click(() => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'v1/seiheki', true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify(data));
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                $('#theme').val('');
-            }
-        };
-    });
-
-    $("#theme").autosize();
-
-    $('#get-current-theme').click(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'v1/seiheki/theme', true);
+        xhr.open('POST', 'v2/room/create', true);
         xhr.send();
         xhr.onreadystatechange = () => {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                const theme = JSON.parse(xhr.response);
-                console.log(`theme: ${theme}`);
-                $('#current-theme').html($('<strong></strong>').text(`${theme}`));
-                $('#current-name').html('');
+                const roomId = JSON.parse(xhr.response);
+                const url = `v2/room/${roomId}/`;
+                window.location = url;
             }
         };
-    });
-
-    $('#get-current-name').click(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'v1/seiheki/name', true);
-        xhr.send();
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                const name = JSON.parse(xhr.response);
-                console.log(`name: ${name}`);
-                $('#current-name').html($('<strong></strong>').text(`この性癖の持ち主は${name}さんです！！！`));
-            }
-        };
-    });
-
-    $('#shuffle-theme').click(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'v1/seiheki/shuffle', true);
-        xhr.send();
-    });
-
-    $('#next-theme').click(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'v1/seiheki/next', true);
-        xhr.send();
     });
 });
 </script>
