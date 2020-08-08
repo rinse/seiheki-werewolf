@@ -147,6 +147,13 @@ showAll' roomId = do
         themeInfo <- viewThemeInfo roomDB roomId
         return $ force themeInfo
 
+showHistory :: UUID -> Werewolf [ThemeInfo]
+showHistory roomId = do
+    flip runContT return $ do
+        roomDB <- ContT withRoomDB
+        themeInfo <- viewHistory roomDB roomId
+        themeInfo `deepseq` return themeInfo
+
 server :: ServerT API Werewolf
 server = showIndex
     :<|> appendTheme
@@ -164,6 +171,7 @@ server = showIndex
     :<|> shuffleTheme'
     :<|> popTheme
     :<|> showAll'
+    :<|> showHistory
 
 hoistWerewolf :: TVar [ThemeInfo] -> ServerT API Werewolf -> Server API
 hoistWerewolf s = hoistServer api $ fmap fst . flip runWerewolf s

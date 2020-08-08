@@ -51,6 +51,18 @@
     </div>
 
     <hr>
+    <h2>性癖履歴</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="col-xs-4">名前</th>
+                <th class="col-xs-8">性癖</th>
+            </tr>
+        </thead>
+        <tbody id="theme-history"></tbody>
+    </table>
+
+    <hr>
     <div class="container">
         <p>GM用ボタン</p>
         <button id="shuffle-theme" type="button" class="btn btn-sm btn-info">お題をシャッフル</button>
@@ -111,6 +123,27 @@ $(() => {
         xhr.open('POST', `next`, true);
         xhr.send();
     });
+
+    // reload history
+    setInterval(() => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'history', true);
+        xhr.send();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                const themeInfo = JSON.parse(xhr.response);
+                const history = $('<tbody id="theme-history">');
+                themeInfo.forEach(info => {
+                    const name = $('<td class="col-xs-2">').text(`${info.name}`);
+                    const theme = $('<td class="col-xs-10">').text(`${info.theme}`);
+                    const tr = $('<tr>').append(name).append(theme);
+                    history.prepend(tr);
+                });
+                $('#theme-history').replaceWith(history);
+            }
+        };
+    }, 1000);
+
 });
 </script>
 </body>

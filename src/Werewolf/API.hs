@@ -27,6 +27,7 @@ type API = Get '[HTML] BL.ByteString
     :<|> "v2" :> "room" :> Capture "id" UUID :> "shuffle" :> Post '[JSON] ()
     :<|> "v2" :> "room" :> Capture "id" UUID :> "next" :> Post '[JSON] ()
     :<|> "v2" :> "room" :> Capture "id" UUID :> "all" :> Get '[JSON] [ThemeInfo]
+    :<|> "v2" :> "room" :> Capture "id" UUID :> "history" :> Get '[JSON] [ThemeInfo]
 
 api :: Proxy API
 api = Proxy
