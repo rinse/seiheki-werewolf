@@ -61,7 +61,7 @@ putItem key item =
 
 $(makeAcidic ''RoomDB ['getItem, 'putItem])
 
-viewItem :: MonadIO m => AcidState RoomDB -> UUID -> m (Maybe Item)
+viewItem :: MonadIO m => AcidState RoomDB -> UUID -> m (Maybe Item)
 viewItem roomDB roomId = liftIO $ query roomDB (GetItem $ toText roomId)
 
 setItem :: MonadIO m => AcidState RoomDB -> UUID -> Item -> m ()
@@ -70,7 +70,7 @@ setItem roomDB roomId item = liftIO . update roomDB $ PutItem (toText roomId) it
 updateItem :: MonadIO m => AcidState RoomDB -> UUID -> (Maybe Item -> Item) -> m ()
 updateItem roomDB roomId f = viewItem roomDB roomId >>= setItem roomDB roomId . f
 
-viewThemeInfo :: MonadIO m => AcidState RoomDB -> UUID -> m Deck
+viewThemeInfo :: MonadIO m => AcidState RoomDB -> UUID -> m Deck
 viewThemeInfo roomDB roomId = maybe [] deck <$> viewItem roomDB roomId
 
 viewHistory :: MonadIO m => AcidState RoomDB -> UUID -> m History
