@@ -136,8 +136,7 @@ $(() => {
         xhr.send();
     });
 
-    // reload history
-    setInterval(() => {
+    $('a[href="#history"]').on('shown.bs.tab', e => {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'history', true);
         xhr.send();
@@ -154,8 +153,7 @@ $(() => {
                 $('#theme-history').replaceWith(history);
             }
         };
-    }, 1000);
-
+    });
 });
 </script>
 </body>
