@@ -64,6 +64,7 @@
         </div>
 
         <div id="history" class="tab-pane p-3">
+            <button id="update-history" type="button" class="btn btn-lg btn-primary">履歴を更新</button>
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -136,7 +137,7 @@ $(() => {
         xhr.send();
     });
 
-    $('a[href="#history"]').on('shown.bs.tab', e => {
+    const updateHistory = () => {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'history', true);
         xhr.send();
@@ -153,6 +154,14 @@ $(() => {
                 $('#theme-history').replaceWith(history);
             }
         };
+    };
+
+    $('a[href="#history"]').on('shown.bs.tab', e => {
+        updateHistory();
+    });
+
+    $('#update-history').click(() => {
+        updateHistory();
     });
 });
 </script>
