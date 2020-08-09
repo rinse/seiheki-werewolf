@@ -25,25 +25,41 @@
     <div class="tab-content">
         <div id="add-theme" class="tab-pane active p-3">
             <div class="container">
-                <h2>ご清遊のしおり</h2>
-                <p>カードにお名前とご性癖をお書きになっていただき、それを集めて山札を作ります。</p>
-                <p>全員のご性癖が集まりましたら、山札をシャッフルして一番上をめくり、その性癖がどのお嬢様のものかを当てていただきます。</p>
-            </div>
-            <hr>
-            <div class="d-flex .flex-sm-row .justify-content-start">
-                <div class="container text-center">
-                    <h2>ご性癖送信フォーム</h2>
-                    <form>
-                        <div class="form-group">
-                            <label>お名前</label>
-                            <input id="name" name="name" type="text" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>ご性癖</label>
-                            <textarea id="theme" name="theme" type="text" class="form-control"></textarea>
-                        </div>
-                        <button id="send-theme" type="button" class="btn btn-primary">送信</button>
-                    </form>
+                <div class="row">
+                    <div>
+                        <h2>ご清遊のしおり</h2>
+                        <p>カードにお名前とご性癖をお書きになっていただき、それを集めて山札を作ります。</p>
+                        <p>全員のご性癖が集まりましたら、山札をシャッフルして一番上をめくり、その性癖がどのお嬢様のものかを当てていただきます。</p>
+                        <hr>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-lg-6 p-3">
+                        <h2>ご性癖送信フォーム</h2>
+                        <form>
+                            <div class="form-group">
+                                <label>お名前</label>
+                                <input id="name" name="name" type="text" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>ご性癖</label>
+                                <textarea id="theme" name="theme" type="text" class="form-control"></textarea>
+                            </div>
+                            <button id="send-theme" type="button" class="btn btn-primary">送信</button>
+                        </form>
+                    </div>
+                    <div class="col-xs-12 col-lg-6 p-3">
+                        <h2>
+                            送信済みのご性癖&nbsp
+                            <button id="update-my-themes" type="button" class="btn btn btn-secondary">更新</button>
+                        </h2>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr><th>お嬢様が送信されたご性癖でございます。</th></tr>
+                            </thead>
+                            <tbody id="my-themes"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -90,6 +106,32 @@
 <script src="https://apis.google.com/js/platform.js" async defer></script>
 <script>
 $(() => {
+    const getMyThemes = () => {
+        const name = $('#name').val();
+        if (name == '') {
+            throw new Error('NoNameError');
+        }
+        return $.ajax({
+            type: 'GET',
+            url: 'all',
+            dataType: 'json',
+            cache: false,
+            timeout: 10000
+        }).then(themeInfoList => {
+            return themeInfoList.filter(obj => obj.name === name);
+        });
+    };
+
+    const renderMyThemes = themeInfoList => {
+        const myThemes = $('<tbody id="my-themes">');
+        themeInfoList.forEach(info => {
+            const theme = $('<td>').text(`${info.theme}`);
+            const tr = $('<tr>').append(theme);
+            myThemes .prepend(tr);
+        });
+        $('#my-themes').replaceWith(myThemes);
+    };
+
     $('#send-theme').click(() => {
         const name = $('#name').val();
         const theme = $('#theme').val();
@@ -103,10 +145,16 @@ $(() => {
             timeout: 10000
         }).then(themeInfo => {
             $('#theme').val('');
+            getMyThemes().then(renderMyThemes);
         });
     });
 
     $("#theme").autosize();
+
+    $('#update-my-themes').click(() => {
+        getMyThemes()
+            .then(renderMyThemes);
+    });
 
     $('#get-current-theme').click(() => {
         $.ajax({
