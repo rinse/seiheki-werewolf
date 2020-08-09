@@ -83,7 +83,7 @@
     <button id="next-theme" type="button" class="btn btn-sm btn-info">次のお題</button>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery-autosize@1.18.18/jquery.autosize.min.js"></script>
@@ -94,31 +94,32 @@ $(() => {
         const name = $('#name').val();
         const theme = $('#theme').val();
         const data = {name: name, theme: theme};
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'theme-info', true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify(data));
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                $('#theme').val('');
-            }
-        };
+        $.ajax({
+            type: 'POST',
+            url: 'theme-info',
+            contentType: 'application/json',
+            cache: false,
+            data: JSON.stringify(data),
+            timeout: 10000
+        }).then(themeInfo => {
+            $('#theme').val('');
+        });
     });
 
     $("#theme").autosize();
 
     $('#get-current-theme').click(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'theme-info/top', true);
-        xhr.send();
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                const themeInfo = JSON.parse(xhr.response);
-                $('#current-theme').html($('<strong></strong>').text(`${themeInfo.theme}`));
-                $('#current-name').hide();
-                $('#current-name').html($('<strong></strong>').text(`こちらのご性癖は、${themeInfo.name}お嬢様のものでございます！！！`));
-            }
-        };
+        $.ajax({
+            type: 'GET',
+            url: 'theme-info/top',
+            dataType: 'json',
+            cache: false,
+            timeout: 10000
+        }).then(themeInfo => {
+            $('#current-theme').html($('<strong></strong>').text(`${themeInfo.theme}`));
+            $('#current-name').hide();
+            $('#current-name').html($('<strong></strong>').text(`こちらのご性癖は、${themeInfo.name}お嬢様のものでございます！！！`));
+        });
     });
 
     $('#get-current-name').click(() => {
@@ -126,42 +127,50 @@ $(() => {
     });
 
     $('#shuffle-theme').click(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `shuffle`, true);
-        xhr.send();
+        $.ajax({
+            type: 'POST',
+            url: 'shuffle',
+            cache: false,
+            timeout: 10000
+        });
     });
 
     $('#next-theme').click(() => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `next`, true);
-        xhr.send();
+        $.ajax({
+            type: 'POST',
+            url: 'next',
+            cache: false,
+            timeout: 10000
+        });
     });
 
-    const updateHistory = () => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', 'history', true);
-        xhr.send();
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                const themeInfo = JSON.parse(xhr.response);
-                const history = $('<tbody id="theme-history">');
-                themeInfo.forEach(info => {
-                    const name = $('<td class="col-xs-2">').text(`${info.name}`);
-                    const theme = $('<td class="col-xs-10">').text(`${info.theme}`);
-                    const tr = $('<tr>').append(name).append(theme);
-                    history.prepend(tr);
-                });
-                $('#theme-history').replaceWith(history);
-            }
-        };
+    const getHistory = () => {
+        return $.ajax({
+            type: 'GET',
+            url: 'history',
+            dataType: 'json',
+            cache: false,
+            timeout: 10000
+        });
+    };
+
+    const renderHistory = themeInfoList => {
+        const history = $('<tbody id="theme-history">');
+        themeInfoList.forEach(info => {
+            const name = $('<td class="col-xs-2">').text(`${info.name}`);
+            const theme = $('<td class="col-xs-10">').text(`${info.theme}`);
+            const tr = $('<tr>').append(name).append(theme);
+            history.prepend(tr);
+        });
+        $('#theme-history').replaceWith(history);
     };
 
     $('a[href="#history"]').on('shown.bs.tab', e => {
-        updateHistory();
+        getHistory().then(renderHistory);
     });
 
     $('#update-history').click(() => {
-        updateHistory();
+        getHistory().then(renderHistory);
     });
 });
 </script>
