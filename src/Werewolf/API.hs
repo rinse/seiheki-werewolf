@@ -9,6 +9,7 @@ import           Data.UUID            (UUID)
 import           Servant.API
 import           Servant.HTML         (HTML)
 import           Werewolf.ThemeInfo   (ThemeInfo)
+import qualified Werewolf.V3.Server.API as V3
 
 
 type API = Get '[HTML] BL.ByteString
@@ -28,6 +29,7 @@ type API = Get '[HTML] BL.ByteString
     :<|> "v2" :> "room" :> Capture "id" UUID :> "next" :> Post '[JSON] ()
     :<|> "v2" :> "room" :> Capture "id" UUID :> "all" :> Get '[JSON] [ThemeInfo]
     :<|> "v2" :> "room" :> Capture "id" UUID :> "history" :> Get '[JSON] [ThemeInfo]
+    :<|> V3.API
 
 api :: Proxy API
 api = Proxy
