@@ -23,10 +23,13 @@ import           Werewolf.V3.SeihekiComment
 import qualified Werewolf.V3.SeihekiCommentDao.Class as Dao
 import qualified Werewolf.V3.SeihekiDao.Class        as Dao
 import           Werewolf.V3.Server.API
-import           Werewolf.Werewolf
 
 
-handler :: ServerT API Werewolf
+handler :: (MonadError ServerError m, MonadRandom m
+        , Dao.MonadSeihekiDao m
+        , Dao.MonadSeihekiCommentDao m
+        , Dao.MonadDeckDao m
+        ) => ServerT API m
 handler = postSeihekis :<|> getSeihekis
     :<|> getSeiheki
     :<|> postSeihekiComments :<|> getSeihekiComments
