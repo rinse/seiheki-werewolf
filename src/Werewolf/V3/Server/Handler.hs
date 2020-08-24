@@ -47,7 +47,7 @@ postSeihekis seiheki = do
     return $ addHeader ("/v3/seihekis" /~ show seihekiId) (res201 seihekiId)
 
 getSeihekis :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m)
-            => Maybe T.Text -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiMap)
+            => Maybe T.Text -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId SeihekiMap)
 getSeihekis author offset limit = do
     for_ limit $ validateLimitation 100
     seihekiMap <- Dao.getSeihekis $ \s -> maybe True (== seihekiAuthor s) author
@@ -69,7 +69,7 @@ postSeihekiComments seihekiId seihekiComment = do
     return $ addHeader ("/v3/seihekis" /~ show seihekiId /~ "comments" /~ show seihekiCommentId) (res201 seihekiCommentId)
 
 getSeihekiComments :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadSeihekiCommentDaoReadOnly m)
-                   => SeihekiId -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiCommentMap)
+                   => SeihekiId -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiCommentId SeihekiCommentMap)
 getSeihekiComments seihekiId offset limit = do
     Seiheki {seihekiCommentIds = commentIds} <- Dao.lookupSeiheki seihekiId -- may throw 404
     for_ limit $ validateLimitation 100
@@ -99,7 +99,7 @@ postCards = do
     return NoContent
 
 getCards :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDaoReadOnly m)
-         => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiMap)
+         => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId SeihekiMap)
 getCards offset limit = do
     for_ limit $ validateLimitation 100
     seihekiIds <- unDeck <$> Dao.getDeck
@@ -118,7 +118,7 @@ getCard n = do
     Dao.lookupSeiheki seihekiId
 
 getHistories :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m)
-             => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiMap)
+             => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId SeihekiMap)
 getHistories offset limit = do
     for_ limit $ validateLimitation 100
     seihekiMap <- Dao.getSeihekis (not . seihekiIsConsumed)

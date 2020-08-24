@@ -38,7 +38,7 @@ type GetSeihekis  = "v3"
     :> QueryParam "author" Text
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (ResGetCollection SeihekiMap)
+    :> Get '[JSON] (ResGetCollection SeihekiId SeihekiMap)
 
 -- |Retrieves a seiheki
 type GetSeiheki = "v3"
@@ -57,7 +57,7 @@ type GetSeihekiComments = "v3"
     :> "comments"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (ResGetCollection SeihekiCommentMap)
+    :> Get '[JSON] (ResGetCollection SeihekiCommentId SeihekiCommentMap)
 
 -- |Retrieves a comment on a seiheki
 type GetSeihekiComment = "v3"
@@ -81,7 +81,7 @@ type GetCards = "v3"
     :> "cards"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (ResGetCollection SeihekiMap)
+    :> Get '[JSON] (ResGetCollection SeihekiId SeihekiMap)
 
 -- |Retrieves a seiheki on a deck
 type GetCard = "v3"
@@ -93,7 +93,7 @@ type GetHistories = "v3"
     :> "histories"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (ResGetCollection SeihekiMap)
+    :> Get '[JSON] (ResGetCollection SeihekiId SeihekiMap)
 
 -- |Response entity for Post
 data Res201 a = Res201
@@ -123,23 +123,25 @@ instance ToJSON PatchRequest where
 instance FromForm PatchRequest
 
 -- |Response entity for GetCollection
-data ResGetCollection a = ResGetCollection
+data ResGetCollection offset a = ResGetCollection
     { resSizeRemains :: Int
+    , resNextOffset  :: Maybe offset
     , resCollection  :: a
     } deriving (Read, Show, Generic)
 
-instance NFData a => NFData (ResGetCollection a)
-instance FromJSON a => FromJSON (ResGetCollection a) where
+instance (NFData offset, NFData a) => NFData (ResGetCollection offset a)
+instance (FromJSON offset, FromJSON a) => FromJSON (ResGetCollection offset a) where
     parseJSON = genericParseJSON $ aesonPrefix camelCase
-instance ToJSON a => ToJSON (ResGetCollection a) where
+instance (ToJSON offset, ToJSON a) => ToJSON (ResGetCollection offset a) where
     toJSON = genericToJSON $ aesonPrefix camelCase
 
 {- |Smart constructor of `ResGetCollection`, specialized for `M.Map`.
     Perhaps DB should do this kind of things.
 -}
-makeResGetCollection :: Int -> Int -> M.Map k v -> ResGetCollection (M.Map k v)
+makeResGetCollection :: Int -> Int -> M.Map k v -> ResGetCollection k (M.Map k v)
 makeResGetCollection offset limit m =
     let dropped = M.drop offset m
         resSizeRemains = max 0 (M.size dropped - limit)
-        resCollection = M.take limit dropped
+        (resCollection, rest) = M.splitAt limit dropped
+        resNextOffset = fst <$> M.lookupMin rest
      in ResGetCollection {..}
