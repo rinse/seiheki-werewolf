@@ -35,6 +35,7 @@ type PostSeihekis = "v3"
 -- |Retrieves seihekis
 type GetSeihekis  = "v3"
     :> "seihekis"
+    :> QueryParam "author" Text
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
     :> Get '[JSON] (ResGetCollection SeihekiMap)

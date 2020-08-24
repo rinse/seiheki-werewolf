@@ -11,6 +11,7 @@ import           Data.Foldable
 import qualified Data.Map                            as M
 import           Data.Maybe
 import qualified Data.Set                            as S
+import qualified Data.Text                           as T
 import qualified Data.Text.Lazy                      as LT
 import qualified Data.Text.Lazy.Encoding             as LT
 import           Servant.API
@@ -46,10 +47,10 @@ postSeihekis seiheki = do
     return $ addHeader ("/v3/seihekis" /~ show seihekiId) (res201 seihekiId)
 
 getSeihekis :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m)
-            => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiMap)
-getSeihekis offset limit = do
+            => Maybe T.Text -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiMap)
+getSeihekis author offset limit = do
     for_ limit $ validateLimitation 100
-    seihekiMap <- Dao.getSeihekis $ const True
+    seihekiMap <- Dao.getSeihekis $ \s -> maybe True (== seihekiAuthor s) author
     let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
     return $ makeResGetCollection offset' limit' seihekiMap
