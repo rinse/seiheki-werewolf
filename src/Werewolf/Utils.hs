@@ -22,4 +22,3 @@ groupedShuffle f list = do
     let sorted = sortBy (compare `on` f) list
         grouped = groupBy ((==) `on` f) sorted
     fmap join $ traverse shuffleM grouped >>= traverse shuffleM . transpose
-

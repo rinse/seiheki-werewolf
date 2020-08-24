@@ -3,7 +3,6 @@
 module Server where
 
 import           Control.Concurrent.STM    (TVar, atomically, newTVar)
-import           Control.DeepSeq
 import           Control.Exception.Safe    (MonadCatch, MonadThrow, catchAny,
                                             throw)
 import           Control.Monad
@@ -15,17 +14,14 @@ import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import qualified Data.Text.IO              as T
 import qualified Data.Text.Lazy            as TL
-import           Data.UUID                 (UUID)
-import           Data.UUID.V4              (nextRandom)
 import qualified Network.Wai.Handler.Warp  as Warp
 import           Servant.API
 import           Servant.Server
 import           System.Random.Shuffle     (shuffleM)
 import           Werewolf.API
-import           Werewolf.RoomDB
 import           Werewolf.ThemeInfo
-import           Werewolf.Utils
 import           Werewolf.Werewolf
+import qualified Werewolf.V2.Server.Handler as V2
 import qualified Werewolf.V3.Server.Handler as V3
 
 
@@ -75,68 +71,6 @@ loadTheme = loadBackup >>= put
 dispose :: Werewolf ()
 dispose = put []
 
-
-
-createRoom :: Werewolf UUID
-createRoom = do
-    roomId <- liftIO nextRandom
-    flip runContT return $ do
-        roomDB <- ContT withRoomDB
-        addThemeInfo roomDB roomId []
-    return roomId
-
-showRoom :: UUID -> Werewolf BL.ByteString
-showRoom _ = liftIO $ BL.readFile "static/room.html"
-
-appendThemeInfo :: UUID -> ThemeInfo -> Werewolf ()
-appendThemeInfo roomId themeInfo =
-    flip runContT return $ do
-        roomDB <- ContT withRoomDB
-        addThemeInfo roomDB roomId [themeInfo]
-
-headMaybe :: [a] -> Maybe a
-headMaybe []    = Nothing
-headMaybe (x:_) = Just x
-
-getTop :: UUID -> Werewolf ThemeInfo
-getTop roomId = do
-    flip runContT return $ do
-        roomDB <- ContT withRoomDB
-        themeInfo <- viewThemeInfo roomDB roomId
-        ret <- maybe throwNoThemeError return $ headMaybe themeInfo
-        return $ force ret
-
-shuffleTheme' :: UUID -> Werewolf ()
-shuffleTheme' roomId = flip runContT return $ do
-    roomDB <- ContT withRoomDB
-    viewThemeInfo roomDB roomId
-        >>= liftIO . groupedShuffle name
-        >>= putThemeInfo roomDB roomId
-
-popTheme :: UUID -> Werewolf ()
-popTheme roomId = flip runContT return $ do
-    roomDB <- ContT withRoomDB
-    themeInfo <- viewThemeInfo roomDB roomId
-    case themeInfo of
-        []     -> throwNoThemeError
-        (x:xs) -> do
-            putThemeInfo roomDB roomId xs
-            addHistory roomDB roomId [x]
-
-showAll' :: UUID -> Werewolf [ThemeInfo]
-showAll' roomId = do
-    flip runContT return $ do
-        roomDB <- ContT withRoomDB
-        themeInfo <- viewThemeInfo roomDB roomId
-        return $ force themeInfo
-
-showHistory :: UUID -> Werewolf [ThemeInfo]
-showHistory roomId = do
-    flip runContT return $ do
-        roomDB <- ContT withRoomDB
-        themeInfo <- viewHistory roomDB roomId
-        themeInfo `deepseq` return themeInfo
-
 server :: ServerT API Werewolf
 server = showIndex
     :<|> appendTheme
@@ -147,14 +81,7 @@ server = showIndex
     :<|> showAll
     :<|> loadTheme
     :<|> dispose
-    :<|> createRoom
-    :<|> showRoom
-    :<|> appendThemeInfo
-    :<|> getTop
-    :<|> shuffleTheme'
-    :<|> popTheme
-    :<|> showAll'
-    :<|> showHistory
+    :<|> V2.handler
     :<|> V3.handler
 
 hoistWerewolf :: TVar [ThemeInfo] -> ServerT API Werewolf -> Server API

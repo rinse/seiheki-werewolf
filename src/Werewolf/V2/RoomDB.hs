@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
 
-module Werewolf.RoomDB
+module Werewolf.V2.RoomDB
     ( RoomDB (..)
     , emptyDB
     , withRoomDB
@@ -102,3 +102,4 @@ closeRoomDB = liftIO . closeAcidState
 
 withRoomDB :: (MonadIO m, MonadMask m) => (AcidState RoomDB -> m a) -> m a
 withRoomDB = bracket openLocalRoomDB closeRoomDB
+
