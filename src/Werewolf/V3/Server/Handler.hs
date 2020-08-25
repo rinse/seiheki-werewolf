@@ -139,14 +139,15 @@ getCard n = do
     Dao.lookupSeiheki seihekiId
 
 getHistories :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadHistoryDaoReadOnly m)
-             => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId [(SeihekiId, Seiheki)])
+             => Maybe Int -> Maybe Int
+             -> m (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId [(SeihekiId, Seiheki)]))
 getHistories offset limit = do
     for_ limit $ validateLimitation 100
     seihekiIds <- unHistory <$> Dao.getHistory
     seihekiMap <- catMaybes <$> withSeihekiBody seihekiIds
     let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
-    return $ makeResGetCollection' offset' limit' seihekiMap
+    return . addHeader accessControlAllowOrigin $ makeResGetCollection' offset' limit' seihekiMap
 
 withSeihekiBody :: (Monad m, Dao.MonadSeihekiDaoReadOnly m) => [SeihekiId] -> m [Maybe (SeihekiId, Seiheki)]
 withSeihekiBody seihekiIds = do
