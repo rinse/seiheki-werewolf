@@ -20,7 +20,7 @@ class MonadDeckDaoReadOnly m => MonadDeckDao m where
     putDeck :: Deck -> m ()
 
 dbIdentifier :: String
-dbIdentifier = "deck"
+dbIdentifier = "v3/deck"
 
 instance MonadDeckDaoReadOnly Werewolf where
     getDeck = flip runContT return $ do

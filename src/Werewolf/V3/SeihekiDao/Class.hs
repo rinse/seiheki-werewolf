@@ -31,7 +31,7 @@ lookupSeiheki' :: (MonadIO m, MonadThrow m) => AcidState (DB.SimpleDB Seiheki) -
 lookupSeiheki' seihekiDB seihekiId = query' seihekiDB (DB.GetValue seihekiId) >>= throw err404 `maybe` return
 
 dbIdentifier :: String
-dbIdentifier = "seiheki"
+dbIdentifier = "v3/seiheki"
 
 instance MonadSeihekiDaoReadOnly Werewolf where
     lookupSeiheki seihekiId = flip runContT return do
