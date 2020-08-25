@@ -86,7 +86,7 @@ type GetCards = "v3"
     :> "cards"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (ResGetCollection SeihekiId SeihekiMap)
+    :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId SeihekiMap))
 
 -- |Retrieves a seiheki on a deck
 type GetCard = "v3"

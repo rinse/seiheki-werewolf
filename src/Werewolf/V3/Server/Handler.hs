@@ -115,14 +115,15 @@ postCards = do
     return $ addHeader accessControlAllowOrigin NoContent
 
 getCards :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDaoReadOnly m)
-         => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId SeihekiMap)
+         => Maybe Int -> Maybe Int
+         -> m (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId SeihekiMap))
 getCards offset limit = do
     for_ limit $ validateLimitation 100
     seihekiIds <- unDeck <$> Dao.getDeck
     seihekiMap <- Dao.getSeihekisRestrictedBy (S.fromList seihekiIds)
     let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
-    return $ makeResGetCollection offset' limit' seihekiMap
+    return . addHeader accessControlAllowOrigin $ makeResGetCollection offset' limit' seihekiMap
 
 getCard :: (Monad m, Dao.MonadDeckDaoReadOnly m, Dao.MonadSeihekiDaoReadOnly m, MonadError ServerError m)
         => Int -> m Seiheki
