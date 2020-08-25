@@ -25,6 +25,7 @@ type API = PostSeihekis :<|> GetSeihekis
     :<|> GetSeihekiComment
     :<|> OptionsSeihekiUpvotes :<|> PatchSeihekiUpvotes
     :<|> PostCards :<|> GetCards
+    :<|> OptionsCard :<|> DeleteCard
     :<|> GetHistories
 
 -- |Posts a seiheki and retrieve all seihekis
@@ -87,6 +88,15 @@ type GetCards = "v3"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
     :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId [(SeihekiId, Seiheki)]))
+
+-- |Preflight request
+type OptionsCard = "v3"
+    :> "cards" :> Capture "seihekiId" SeihekiId
+    :> Verb 'OPTIONS 204 '[JSON] (OptionsHeaders NoContent)
+-- |Deletes a card from a deck
+type DeleteCard = "v3"
+    :> "cards" :> Capture "seihekiId" SeihekiId
+    :> Delete '[JSON] NoContent
 
 -- |Retrieves a seiheki on a deck
 type GetCard = "v3"

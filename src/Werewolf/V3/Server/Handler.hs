@@ -35,7 +35,7 @@ handler :: (MonadError ServerError m, MonadRandom m
         , Dao.MonadSeihekiDao m
         , Dao.MonadSeihekiCommentDao m
         , Dao.MonadDeckDao m
-        , Dao.MonadHistoryDaoReadOnly m
+        , Dao.MonadHistoryDao m
         ) => ServerT API m
 handler = postSeihekis :<|> getSeihekis
     :<|> getSeiheki
@@ -43,6 +43,7 @@ handler = postSeihekis :<|> getSeihekis
     :<|> getSeihekiComment
     :<|> optionsSeihekiUpvotes :<|> patchSeihekiUpvotes
     :<|> postCards :<|> getCards
+    :<|> optionsCard :<|> deleteCard
     :<|> getHistories
 
 postSeihekis :: (Monad m, Dao.MonadSeihekiDao m)
@@ -128,6 +129,27 @@ getCards offset limit = do
         limit' = fromMaybe defaultLimit limit
     return . addHeader accessControlAllowOrigin $ makeResGetCollection' offset' limit' seihekiMap
 
+optionsCard :: (Monad m, Dao.MonadSeihekiDaoReadOnly m) => SeihekiId -> m (OptionsHeaders NoContent)
+optionsCard  seihekiId = do
+    _ <- Dao.lookupSeiheki seihekiId
+    return
+         . addHeader accessControlAllowOrigin
+         . addHeader "DELETE, OPTIONS"
+         . addHeader "*"
+         . addHeader 600
+         $ addHeader "Origin" NoContent
+
+deleteCard :: (MonadError ServerError m, Dao.MonadDeckDao m, Dao.MonadHistoryDao m) => SeihekiId -> m NoContent
+deleteCard seihekiId = do
+    deck <- unDeck <$> Dao.getDeck
+    let (h, t) = break (== seihekiId) deck
+    newDeck <- case t of
+        [] -> throwError err404
+        (x:xs) -> do
+            Dao.addHistory x
+            return $ h <> xs
+    Dao.putDeck $ Deck newDeck
+    return NoContent
 
 getHistories :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadHistoryDaoReadOnly m)
              => Maybe Int -> Maybe Int
