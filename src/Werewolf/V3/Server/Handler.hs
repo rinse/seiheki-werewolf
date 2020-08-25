@@ -26,6 +26,9 @@ import qualified Werewolf.V3.SeihekiDao.Class        as Dao
 import           Werewolf.V3.Server.API
 
 
+accessControlAllowOrigin :: String
+accessControlAllowOrigin = "*"  -- "rinse.github.io"
+
 handler :: (MonadError ServerError m, MonadRandom m
         , Dao.MonadSeihekiDao m
         , Dao.MonadSeihekiCommentDao m
@@ -47,13 +50,13 @@ postSeihekis seiheki = do
     return $ addHeader ("/v3/seihekis" /~ show seihekiId) (res201 seihekiId)
 
 getSeihekis :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m)
-            => Maybe T.Text -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId SeihekiMap)
+            => Maybe T.Text -> Maybe Int -> Maybe Int -> m (Headers '[Header "Access-Control-Allow-Origin" String] (ResGetCollection SeihekiId SeihekiMap))
 getSeihekis author offset limit = do
     for_ limit $ validateLimitation 100
     seihekiMap <- Dao.getSeihekis $ \s -> maybe True (== seihekiAuthor s) author
     let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
-    return $ makeResGetCollection offset' limit' seihekiMap
+    return . addHeader accessControlAllowOrigin $ makeResGetCollection offset' limit' seihekiMap
 
 getSeiheki :: Dao.MonadSeihekiDaoReadOnly m => SeihekiId -> m Seiheki
 getSeiheki = Dao.lookupSeiheki
