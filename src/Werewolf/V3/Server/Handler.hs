@@ -118,7 +118,7 @@ getCards :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadD
 getCards offset limit = do
     for_ limit $ validateLimitation 100
     seihekiIds <- unDeck <$> Dao.getDeck
-    seihekiMap <- Dao.getSeihekisRestrictedBy (S.fromAscList seihekiIds)
+    seihekiMap <- Dao.getSeihekisRestrictedBy (S.fromList seihekiIds)
     let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
     return $ makeResGetCollection offset' limit' seihekiMap
