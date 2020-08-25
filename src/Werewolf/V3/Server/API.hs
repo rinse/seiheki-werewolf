@@ -25,7 +25,6 @@ type API = PostSeihekis :<|> GetSeihekis
     :<|> GetSeihekiComment
     :<|> OptionsSeihekiUpvotes :<|> PatchSeihekiUpvotes
     :<|> PostCards :<|> GetCards
-    :<|> GetCard
     :<|> GetHistories
 
 -- |Posts a seiheki and retrieve all seihekis

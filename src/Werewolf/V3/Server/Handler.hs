@@ -43,7 +43,6 @@ handler = postSeihekis :<|> getSeihekis
     :<|> getSeihekiComment
     :<|> optionsSeihekiUpvotes :<|> patchSeihekiUpvotes
     :<|> postCards :<|> getCards
-    :<|> getCard
     :<|> getHistories
 
 postSeihekis :: (Monad m, Dao.MonadSeihekiDao m)
@@ -129,14 +128,6 @@ getCards offset limit = do
         limit' = fromMaybe defaultLimit limit
     return . addHeader accessControlAllowOrigin $ makeResGetCollection' offset' limit' seihekiMap
 
-getCard :: (Monad m, Dao.MonadDeckDaoReadOnly m, Dao.MonadSeihekiDaoReadOnly m, MonadError ServerError m)
-        => Int -> m Seiheki
-getCard n = do
-    seihekiIds <- unDeck <$> Dao.getDeck
-    seihekiId <- case drop n seihekiIds of
-        []    -> throwError err404
-        (a:_) -> return a
-    Dao.lookupSeiheki seihekiId
 
 getHistories :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadHistoryDaoReadOnly m)
              => Maybe Int -> Maybe Int
