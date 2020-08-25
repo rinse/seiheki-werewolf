@@ -50,7 +50,7 @@ postSeihekis seiheki = do
     return . addHeader accessControlAllowOrigin $ addHeader ("/v3/seihekis" /~ show seihekiId) (res201 seihekiId)
 
 getSeihekis :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m)
-            => Maybe T.Text -> Maybe Int -> Maybe Int -> m (Headers '[Header "Access-Control-Allow-Origin" String] (ResGetCollection SeihekiId SeihekiMap))
+            => Maybe T.Text -> Maybe Int -> Maybe Int -> m (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId SeihekiMap))
 getSeihekis author offset limit = do
     for_ limit $ validateLimitation 100
     seihekiMap <- Dao.getSeihekis $ \s -> maybe True (== seihekiAuthor s) author
@@ -101,10 +101,10 @@ patchSeihekiUpvotes :: (Monad m, MonadError ServerError m, Dao.MonadSeihekiDao m
 patchSeihekiUpvotes seihekiId PatchRequest {..} = do
     when (patchOp /= "increment") $
         throwError err400 {errBody = LT.encodeUtf8 . LT.fromStrict $ patchOp <> " is not allowed as op."}
-    Dao.patchSeiheki f seihekiId
+    Dao.patchSeiheki incrementUpvotes seihekiId
     return $ addHeader accessControlAllowOrigin NoContent
     where
-    f s@Seiheki {seihekiUpvotes=upvotes} = s {seihekiUpvotes = upvotes + 1}
+    incrementUpvotes s@Seiheki {seihekiUpvotes=upvotes} = s {seihekiUpvotes = upvotes + 1}
 
 postCards :: (MonadRandom m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDao m) => m NoContent
 postCards = do

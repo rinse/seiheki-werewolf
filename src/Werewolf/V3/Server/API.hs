@@ -31,14 +31,14 @@ type API = PostSeihekis :<|> GetSeihekis
 type PostSeihekis = "v3"
     :> "seihekis"
     :> ReqBody '[JSON, FormUrlEncoded] Seiheki
-    :> PostCreated '[JSON] (Headers '[Header "Access-Control-Allow-Origin" String, Header "Location" String] (Res201 SeihekiId))
+    :> PostCreated '[JSON] (Headers '[AccessControlAllowOriginHeader, LocationHeader] (Res201 SeihekiId))
 -- |Retrieves seihekis
 type GetSeihekis  = "v3"
     :> "seihekis"
     :> QueryParam "author" Text
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (Headers '[Header "Access-Control-Allow-Origin" String] (ResGetCollection SeihekiId SeihekiMap))
+    :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId SeihekiMap))
 
 -- |Retrieves a seiheki
 type GetSeiheki = "v3"
@@ -50,7 +50,7 @@ type PostSeihekiComments = "v3"
     :> "seihekis" :> Capture "id" SeihekiId
     :> "comments"
     :> ReqBody '[JSON, FormUrlEncoded] SeihekiComment
-    :> PostCreated '[JSON] (Headers '[Header "Location" String] (Res201 SeihekiCommentId))
+    :> PostCreated '[JSON] (Headers '[LocationHeader] (Res201 SeihekiCommentId))
 -- |Retrieves seiheki comments
 type GetSeihekiComments = "v3"
     :> "seihekis" :> Capture "id" SeihekiId
@@ -100,6 +100,7 @@ type GetHistories = "v3"
     :> QueryParam "limit" Int
     :> Get '[JSON] (ResGetCollection SeihekiId SeihekiMap)
 
+type LocationHeader = Header "Location" String
 type AccessControlAllowOriginHeader = Header "Access-Control-Allow-Origin" String
 type AccessControlAllowMethodsHeader = Header "Access-Control-Allow-Methods" String
 type AccessControlAllowHeadersHeader = Header "Access-Control-Allow-Headers" String
