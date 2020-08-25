@@ -108,7 +108,7 @@ patchSeihekiUpvotes seihekiId PatchRequest {..} = do
 
 postCards :: (MonadRandom m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDao m) => m NoContent
 postCards = do
-    seihekiMap <- Dao.getSeihekis seihekiIsConsumed
+    seihekiMap <- Dao.getSeihekis (not . seihekiIsConsumed)
     seihekiMap' <- groupedShuffle (seihekiAuthor . snd) (M.assocs seihekiMap)
     Dao.putDeck . Deck $ fst <$> seihekiMap'
     return NoContent
