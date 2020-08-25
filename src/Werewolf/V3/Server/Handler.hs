@@ -106,12 +106,13 @@ patchSeihekiUpvotes seihekiId PatchRequest {..} = do
     where
     incrementUpvotes s@Seiheki {seihekiUpvotes=upvotes} = s {seihekiUpvotes = upvotes + 1}
 
-postCards :: (MonadRandom m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDao m) => m NoContent
+postCards :: (MonadRandom m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDao m)
+          => m (Headers '[AccessControlAllowOriginHeader] NoContent)
 postCards = do
     seihekiMap <- Dao.getSeihekis (not . seihekiIsConsumed)
     seihekiMap' <- groupedShuffle (seihekiAuthor . snd) (M.assocs seihekiMap)
     Dao.putDeck . Deck $ fst <$> seihekiMap'
-    return NoContent
+    return $ addHeader accessControlAllowOrigin NoContent
 
 getCards :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDaoReadOnly m)
          => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId SeihekiMap)

@@ -80,7 +80,7 @@ type PatchSeihekiUpvotes = "v3"
 -- |Makes a deck from seihekis
 type PostCards = "v3"
     :> "cards"
-    :> PostCreated '[JSON] NoContent
+    :> PostCreated '[JSON] (Headers '[AccessControlAllowOriginHeader] NoContent)
 -- |Retrieves a deck
 type GetCards = "v3"
     :> "cards"
