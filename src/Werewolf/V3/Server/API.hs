@@ -10,6 +10,7 @@ import           Control.DeepSeq            (NFData)
 import           Data.Aeson
 import           Data.Aeson.Casing
 import qualified Data.Map.Strict            as M
+import           Data.Maybe
 import           Data.Text                  (Text)
 import           GHC.Generics               (Generic)
 import           Servant.API
@@ -86,7 +87,7 @@ type GetCards = "v3"
     :> "cards"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId SeihekiMap))
+    :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId [(SeihekiId, Seiheki)]))
 
 -- |Retrieves a seiheki on a deck
 type GetCard = "v3"
@@ -163,4 +164,12 @@ makeResGetCollection offset limit m =
         resSizeRemains = max 0 (M.size dropped - limit)
         (resCollection, rest) = M.splitAt limit dropped
         resNextOffset = fst <$> M.lookupMin rest
+     in ResGetCollection {..}
+
+makeResGetCollection' :: Int -> Int -> [(k, v)] -> ResGetCollection k [(k, v)]
+makeResGetCollection' offset limit m =
+    let dropped = drop offset m
+        resSizeRemains = max 0 (length dropped - limit)
+        (resCollection, rest) = splitAt limit dropped
+        resNextOffset = fst <$> listToMaybe rest
      in ResGetCollection {..}
