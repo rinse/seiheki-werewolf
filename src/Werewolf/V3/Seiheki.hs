@@ -22,7 +22,6 @@ data Seiheki = Seiheki
     { seihekiContent    :: Text                 -- ^Seiheki
     , seihekiAuthor     :: Text                 -- ^Author
     , seihekiUpvotes    :: Int                  -- ^Number of upvotes
-    , seihekiIsConsumed :: Bool                 -- ^Is already read
     , seihekiCommentIds :: [SeihekiCommentId]   -- ^Comments
     } deriving (Read, Show, Generic)
 

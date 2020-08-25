@@ -99,7 +99,7 @@ type GetHistories = "v3"
     :> "histories"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (ResGetCollection SeihekiId SeihekiMap)
+    :> Get '[JSON] (ResGetCollection SeihekiId [(SeihekiId, Seiheki)])
 
 type LocationHeader = Header "Location" String
 type AccessControlAllowOriginHeader = Header "Access-Control-Allow-Origin" String

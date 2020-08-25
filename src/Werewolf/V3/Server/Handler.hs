@@ -9,7 +9,7 @@ import           Control.Monad.Error.Class           (MonadError, throwError)
 import           Control.Monad.Random.Class          (MonadRandom (..))
 import           Data.Foldable
 import qualified Data.Map                            as M
-import           Data.Maybe
+import           Data.Maybe                          (catMaybes, fromMaybe)
 import qualified Data.Set                            as S
 import qualified Data.Text                           as T
 import qualified Data.Text.Lazy                      as LT
@@ -19,6 +19,8 @@ import           Servant.Server
 import           Werewolf.Utils                      (groupedShuffle)
 import           Werewolf.V3.Deck                    (Deck (..))
 import qualified Werewolf.V3.DeckDao.Class           as Dao
+import           Werewolf.V3.History
+import qualified Werewolf.V3.HistoryDao.Class        as Dao
 import           Werewolf.V3.Seiheki
 import           Werewolf.V3.SeihekiComment
 import qualified Werewolf.V3.SeihekiCommentDao.Class as Dao
@@ -33,6 +35,7 @@ handler :: (MonadError ServerError m, MonadRandom m
         , Dao.MonadSeihekiDao m
         , Dao.MonadSeihekiCommentDao m
         , Dao.MonadDeckDao m
+        , Dao.MonadHistoryDaoReadOnly m
         ) => ServerT API m
 handler = postSeihekis :<|> getSeihekis
     :<|> getSeiheki
@@ -106,10 +109,11 @@ patchSeihekiUpvotes seihekiId PatchRequest {..} = do
     where
     incrementUpvotes s@Seiheki {seihekiUpvotes=upvotes} = s {seihekiUpvotes = upvotes + 1}
 
-postCards :: (MonadRandom m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDao m)
+postCards :: (MonadRandom m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadDeckDao m, Dao.MonadHistoryDaoReadOnly m)
           => m (Headers '[AccessControlAllowOriginHeader] NoContent)
 postCards = do
-    seihekiMap <- Dao.getSeihekis (not . seihekiIsConsumed)
+    history <- unHistory <$> Dao.getHistory
+    seihekiMap <- flip M.withoutKeys (S.fromList history) <$> Dao.getSeihekis (const True)
     seihekiMap' <- groupedShuffle (seihekiAuthor . snd) (M.assocs seihekiMap)
     Dao.putDeck . Deck $ fst <$> seihekiMap'
     return $ addHeader accessControlAllowOrigin NoContent
@@ -120,12 +124,7 @@ getCards :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadD
 getCards offset limit = do
     for_ limit $ validateLimitation 100
     seihekiIds <- unDeck <$> Dao.getDeck
-    allSeihekiMap <- Dao.getSeihekis (const True)
-    let seihekiMap = catMaybes $ do
-            seihekiId <- seihekiIds
-            return $ do
-                seiheki <- M.lookup seihekiId allSeihekiMap
-                return (seihekiId, seiheki)
+    seihekiMap <- catMaybes <$> withSeihekiBody seihekiIds
     let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
     return . addHeader accessControlAllowOrigin $ makeResGetCollection' offset' limit' seihekiMap
@@ -139,14 +138,24 @@ getCard n = do
         (a:_) -> return a
     Dao.lookupSeiheki seihekiId
 
-getHistories :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m)
-             => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId SeihekiMap)
+getHistories :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadHistoryDaoReadOnly m)
+             => Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiId [(SeihekiId, Seiheki)])
 getHistories offset limit = do
     for_ limit $ validateLimitation 100
-    seihekiMap <- Dao.getSeihekis (not . seihekiIsConsumed)
+    seihekiIds <- unHistory <$> Dao.getHistory
+    seihekiMap <- catMaybes <$> withSeihekiBody seihekiIds
     let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
-    return $ makeResGetCollection offset' limit' seihekiMap
+    return $ makeResGetCollection' offset' limit' seihekiMap
+
+withSeihekiBody :: (Monad m, Dao.MonadSeihekiDaoReadOnly m) => [SeihekiId] -> m [Maybe (SeihekiId, Seiheki)]
+withSeihekiBody seihekiIds = do
+    allSeihekiMap <- Dao.getSeihekis (const True)
+    return $ do
+        seihekiId <- seihekiIds
+        return $ do
+            seiheki <- M.lookup seihekiId allSeihekiMap
+            return (seihekiId, seiheki)
 
 defaultLimit :: Int
 defaultLimit = 100
