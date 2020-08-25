@@ -38,7 +38,7 @@ handler = postSeihekis :<|> getSeihekis
     :<|> getSeiheki
     :<|> postSeihekiComments :<|> getSeihekiComments
     :<|> getSeihekiComment
-    :<|> patchSeihekiUpvote
+    :<|> optionsSeihekiUpvotes :<|> patchSeihekiUpvotes
     :<|> postCards :<|> getCards
     :<|> getCard
     :<|> getHistories
@@ -85,12 +85,24 @@ getSeihekiComments seihekiId offset limit = do
 getSeihekiComment :: Dao.MonadSeihekiCommentDaoReadOnly m => SeihekiId -> SeihekiCommentId -> m SeihekiComment
 getSeihekiComment _ = Dao.lookupSeihekiComment
 
-patchSeihekiUpvote :: (Monad m, MonadError ServerError m, Dao.MonadSeihekiDao m) => SeihekiId -> PatchRequest -> m NoContent
-patchSeihekiUpvote seihekiId PatchRequest {..} = do
+optionsSeihekiUpvotes :: (Monad m, Dao.MonadSeihekiDaoReadOnly m)
+                      => SeihekiId -> m (OptionsHeaders NoContent)
+optionsSeihekiUpvotes seihekiId = do
+    _ <- Dao.lookupSeiheki seihekiId
+    return
+         . addHeader accessControlAllowOrigin
+         . addHeader "PATCH, OPTIONS"
+         . addHeader "*"
+         . addHeader 600
+         $ addHeader "Origin" NoContent
+
+patchSeihekiUpvotes :: (Monad m, MonadError ServerError m, Dao.MonadSeihekiDao m)
+                   => SeihekiId -> PatchRequest -> m (Headers '[AccessControlAllowOriginHeader] NoContent)
+patchSeihekiUpvotes seihekiId PatchRequest {..} = do
     when (patchOp /= "increment") $
         throwError err400 {errBody = LT.encodeUtf8 . LT.fromStrict $ patchOp <> " is not allowed as op."}
     Dao.patchSeiheki f seihekiId
-    return NoContent
+    return $ addHeader accessControlAllowOrigin NoContent
     where
     f s@Seiheki {seihekiUpvotes=upvotes} = s {seihekiUpvotes = upvotes + 1}
 

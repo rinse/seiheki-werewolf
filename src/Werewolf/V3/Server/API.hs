@@ -22,7 +22,7 @@ type API = PostSeihekis :<|> GetSeihekis
     :<|> GetSeiheki
     :<|> PostSeihekiComments :<|> GetSeihekiComments
     :<|> GetSeihekiComment
-    :<|> PatchSeihekiUpvote
+    :<|> OptionsSeihekiUpvotes :<|> PatchSeihekiUpvotes
     :<|> PostCards :<|> GetCards
     :<|> GetCard
     :<|> GetHistories
@@ -65,12 +65,17 @@ type GetSeihekiComment = "v3"
     :> "comments" :> Capture "seihekiCommentId" SeihekiCommentId
     :> Get '[JSON] SeihekiComment
 
+-- |Preflight request
+type OptionsSeihekiUpvotes = "v3"
+    :> "seihekis" :> Capture "seihekiId" SeihekiId
+    :> "upvotes"
+    :> Verb 'OPTIONS 204 '[JSON] (OptionsHeaders NoContent)
 -- |Gives an upvote to a seiheki
-type PatchSeihekiUpvote = "v3"
+type PatchSeihekiUpvotes = "v3"
     :> "seihekis" :> Capture "seihekiId" SeihekiId
     :> "upvotes"
     :> ReqBody '[JSON, FormUrlEncoded] PatchRequest
-    :> PatchNoContent '[JSON] NoContent
+    :> PatchNoContent '[JSON] (Headers '[AccessControlAllowOriginHeader] NoContent)
 
 -- |Makes a deck from seihekis
 type PostCards = "v3"
@@ -94,6 +99,19 @@ type GetHistories = "v3"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
     :> Get '[JSON] (ResGetCollection SeihekiId SeihekiMap)
+
+type AccessControlAllowOriginHeader = Header "Access-Control-Allow-Origin" String
+type AccessControlAllowMethodsHeader = Header "Access-Control-Allow-Methods" String
+type AccessControlAllowHeadersHeader = Header "Access-Control-Allow-Headers" String
+type AccessControlMaxAgeHeader = Header "Access-Control-Max-Age" Int
+type VeryHeader = Header "Vary" String
+type OptionsHeaders = Headers
+    '[ AccessControlAllowOriginHeader
+     , AccessControlAllowMethodsHeader
+     , AccessControlAllowHeadersHeader
+     , AccessControlMaxAgeHeader
+     , VeryHeader
+    ]
 
 -- |Response entity for Post
 data Res201 a = Res201
