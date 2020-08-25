@@ -31,7 +31,7 @@ type API = PostSeihekis :<|> GetSeihekis
 type PostSeihekis = "v3"
     :> "seihekis"
     :> ReqBody '[JSON, FormUrlEncoded] Seiheki
-    :> PostCreated '[JSON] (Headers '[Header "Location" String] (Res201 SeihekiId))
+    :> PostCreated '[JSON] (Headers '[Header "Access-Control-Allow-Origin" String, Header "Location" String] (Res201 SeihekiId))
 -- |Retrieves seihekis
 type GetSeihekis  = "v3"
     :> "seihekis"

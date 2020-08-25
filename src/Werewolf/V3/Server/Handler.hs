@@ -44,10 +44,10 @@ handler = postSeihekis :<|> getSeihekis
     :<|> getHistories
 
 postSeihekis :: (Monad m, Dao.MonadSeihekiDao m)
-             => Seiheki -> m (Headers '[Header "Location" String] (Res201 SeihekiId))
+             => Seiheki -> m (Headers '[Header "Access-Control-Allow-Origin" String, Header "Location" String] (Res201 SeihekiId))
 postSeihekis seiheki = do
     seihekiId <- Dao.postSeiheki seiheki
-    return $ addHeader ("/v3/seihekis" /~ show seihekiId) (res201 seihekiId)
+    return . addHeader accessControlAllowOrigin $ addHeader ("/v3/seihekis" /~ show seihekiId) (res201 seihekiId)
 
 getSeihekis :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m)
             => Maybe T.Text -> Maybe Int -> Maybe Int -> m (Headers '[Header "Access-Control-Allow-Origin" String] (ResGetCollection SeihekiId SeihekiMap))
