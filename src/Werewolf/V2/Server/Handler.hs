@@ -13,7 +13,7 @@ import           Servant.API
 import           Servant.Server
 import           Werewolf.ThemeInfo
 import           Werewolf.Utils
-import           Werewolf.V2.RoomDB
+import           Werewolf.RoomDB
 import           Werewolf.V2.Server.API
 import           Werewolf.Werewolf
 

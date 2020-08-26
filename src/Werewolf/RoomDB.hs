@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies    #-}
 
-module Werewolf.V2.RoomDB
+module Werewolf.RoomDB
     ( RoomDB (..)
     , emptyDB
     , withRoomDB
