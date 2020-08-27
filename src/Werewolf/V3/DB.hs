@@ -26,6 +26,22 @@ emptyDB = DB M.empty M.empty (Deck []) (History [])
 
 $(deriveSafeCopy 0 'base ''DB)
 
+lookupSeiheki :: SeihekiId -> Query DB (Maybe Seiheki)
+lookupSeiheki key = M.lookup key . seihekiDB <$> ask
+
+insertSeiheki :: SeihekiId -> Seiheki -> Update DB ()
+insertSeiheki key item = modify' $ \db@DB{..} -> db { seihekiDB = M.insert key item seihekiDB }
+
+postSeiheki :: Seiheki -> Update DB SeihekiId
+postSeiheki item = do
+    maxId <- fmap fst . M.lookupMax . seihekiDB <$> get
+    let newId = maybe (toEnum 0) succ maxId
+    insertSeiheki newId item
+    return newId
+
+getSeihekis :: Query DB (M.Map SeihekiId Seiheki)
+getSeihekis = seihekiDB <$> ask
+
 lookupSeihekiComment :: SeihekiCommentId -> Query DB (Maybe SeihekiComment)
 lookupSeihekiComment key = M.lookup key . seihekiCommentDB <$> ask
 
@@ -42,4 +58,13 @@ postSeihekiComment item = do
 getSeihekiComments :: Query DB (M.Map SeihekiCommentId SeihekiComment)
 getSeihekiComments = seihekiCommentDB <$> ask
 
-$(makeAcidic ''DB ['lookupSeihekiComment, 'insertSeihekiComment, 'postSeihekiComment, 'getSeihekiComments])
+$(makeAcidic ''DB
+    [ 'lookupSeiheki
+    , 'insertSeiheki
+    , 'postSeiheki
+    , 'getSeihekis
+    , 'lookupSeihekiComment
+    , 'insertSeihekiComment
+    , 'postSeihekiComment
+    , 'getSeihekiComments
+    ])

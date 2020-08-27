@@ -12,9 +12,9 @@ import           Data.Text                  (Text)
 import           GHC.Generics               (Generic)
 import           Web.FormUrlEncoded         (FromForm)
 import           Werewolf.V3.SeihekiComment (SeihekiCommentId)
-import           Werewolf.V3.SimpleDB       (PrimaryKey)
 
-type SeihekiId = PrimaryKey
+
+type SeihekiId = Int
 
 type SeihekiMap = M.Map SeihekiId Seiheki
 

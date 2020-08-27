@@ -11,12 +11,11 @@ import           Data.SafeCopy        (SafeCopy)
 import           Data.Text            (Text)
 import           GHC.Generics         (Generic)
 import           Web.FormUrlEncoded   (FromForm)
-import           Werewolf.V3.SimpleDB (PrimaryKey)
 
+
+type SeihekiCommentId = Int
 
 type SeihekiCommentMap = Map SeihekiCommentId SeihekiComment
-
-type SeihekiCommentId = PrimaryKey
 
 data SeihekiComment = SeihekiComment
     { commentContent :: Text    -- ^Comment
