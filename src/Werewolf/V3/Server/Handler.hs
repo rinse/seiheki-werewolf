@@ -5,35 +5,39 @@
 module Werewolf.V3.Server.Handler where
 
 import           Control.Monad
-import           Control.Monad.Error.Class           (MonadError, throwError)
-import           Control.Monad.Random.Class          (MonadRandom (..))
+import           Control.Monad.Error.Class    (MonadError, throwError)
+import           Control.Monad.IO.Class
+import           Control.Monad.Random.Class   (MonadRandom (..))
+import qualified Data.Acid                    as A
+import qualified Data.Acid.Advanced           as A
 import           Data.Foldable
-import qualified Data.Map                            as M
-import           Data.Maybe                          (catMaybes, fromMaybe)
-import qualified Data.Set                            as S
-import qualified Data.Text                           as T
-import qualified Data.Text.Lazy                      as LT
-import qualified Data.Text.Lazy.Encoding             as LT
+import qualified Data.Map                     as M
+import           Data.Maybe                   (catMaybes, fromMaybe)
+import qualified Data.Set                     as S
+import qualified Data.Text                    as T
+import qualified Data.Text.Lazy               as LT
+import qualified Data.Text.Lazy.Encoding      as LT
 import           Servant.API
 import           Servant.Server
-import           Werewolf.Utils                      (groupedShuffle)
-import           Werewolf.V3.Deck                    (Deck (..))
-import qualified Werewolf.V3.DeckDao.Class           as Dao
+import           Werewolf.Utils               (groupedShuffle)
+import qualified Werewolf.V3.DB               as DB
+import qualified Werewolf.V3.DB.Class         as DB
+import           Werewolf.V3.Deck             (Deck (..))
+import qualified Werewolf.V3.DeckDao.Class    as Dao
 import           Werewolf.V3.History
-import qualified Werewolf.V3.HistoryDao.Class        as Dao
+import qualified Werewolf.V3.HistoryDao.Class as Dao
 import           Werewolf.V3.Seiheki
 import           Werewolf.V3.SeihekiComment
-import qualified Werewolf.V3.SeihekiCommentDao.Class as Dao
-import qualified Werewolf.V3.SeihekiDao.Class        as Dao
+import qualified Werewolf.V3.SeihekiDao.Class as Dao
 import           Werewolf.V3.Server.API
 
 
 accessControlAllowOrigin :: String
 accessControlAllowOrigin = "*"  -- "rinse.github.io"
 
-handler :: (MonadError ServerError m, MonadRandom m
+handler :: (MonadIO m, MonadError ServerError m, MonadRandom m
         , Dao.MonadSeihekiDao m
-        , Dao.MonadSeihekiCommentDao m
+        , DB.MonadDB m
         , Dao.MonadDeckDao m
         , Dao.MonadHistoryDao m
         ) => ServerT API m
@@ -64,34 +68,39 @@ getSeihekis author offset limit = do
 getSeiheki :: Dao.MonadSeihekiDaoReadOnly m => SeihekiId -> m Seiheki
 getSeiheki = Dao.lookupSeiheki
 
-postSeihekiComments :: (Monad m, Dao.MonadSeihekiDao m, Dao.MonadSeihekiCommentDao m)
+postSeihekiComments :: (MonadIO m, Dao.MonadSeihekiDao m, DB.MonadDB m)
                     => SeihekiId -> SeihekiComment
                     -> m (Headers '[AccessControlAllowOriginHeader, LocationHeader] (Res201 SeihekiCommentId))
 postSeihekiComments seihekiId seihekiComment = do
     _ <- Dao.lookupSeiheki seihekiId
-    seihekiCommentId <- Dao.postSeihekiComment seihekiComment
+    db <- DB.getAcidState
+    seihekiCommentId <- A.update' db (DB.PostSeihekiComment seihekiComment)
     _ <- flip Dao.patchSeiheki seihekiId $ \s@Seiheki {..} ->
         s {seihekiCommentIds = seihekiCommentId:seihekiCommentIds}
+    liftIO $ A.createCheckpoint db
     return
         . addHeader accessControlAllowOrigin
         $ addHeader ("/v3/seihekis" /~ show seihekiId /~ "comments" /~ show seihekiCommentId) (res201 seihekiCommentId)
 
-getSeihekiComments :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadSeihekiCommentDaoReadOnly m)
+getSeihekiComments :: (MonadIO m, MonadError ServerError m, DB.MonadDB m, Dao.MonadSeihekiDaoReadOnly m)
                    => SeihekiId -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiCommentId SeihekiCommentMap)
 getSeihekiComments seihekiId offset limit = do
     Seiheki {seihekiCommentIds = commentIds} <- Dao.lookupSeiheki seihekiId -- may throw 404
     for_ limit $ validateLimitation 100
-    commentMap <- Dao.getSeihekiComments
+    db <- DB.getAcidState
+    commentMap <- A.query' db DB.GetSeihekiComments
     let commentMap' = M.restrictKeys commentMap (S.fromList commentIds)
         offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
     return $ makeResGetCollection offset' limit' commentMap'
 
-getSeihekiComment :: (Monad m, Dao.MonadSeihekiCommentDaoReadOnly m)
+getSeihekiComment :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
                   => SeihekiId -> SeihekiCommentId -> m (Headers '[AccessControlAllowOriginHeader] SeihekiComment)
 getSeihekiComment _ seihekiCommentId = do
-    seihekiComment <- Dao.lookupSeihekiComment seihekiCommentId
-    return $ addHeader accessControlAllowOrigin seihekiComment
+    db <- DB.getAcidState
+    seihekiComment <- A.query' db $ DB.LookupSeihekiComment seihekiCommentId
+    seihekiComment' <- maybe (throwError err404) return seihekiComment
+    return $ addHeader accessControlAllowOrigin seihekiComment'
 
 optionsSeihekiUpvotes :: (Monad m, Dao.MonadSeihekiDaoReadOnly m)
                       => SeihekiId -> m (OptionsHeaders NoContent)

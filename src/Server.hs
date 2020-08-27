@@ -2,7 +2,9 @@
 module Server where
 
 import           Control.Concurrent.STM     (TVar, atomically, newTVar)
+import           Control.Exception.Safe     (bracket)
 import           Control.Monad.Cont
+import           Data.Acid
 import qualified Data.ByteString.Lazy       as BL
 import qualified Network.Wai.Handler.Warp   as Warp
 import           Servant.API
@@ -11,6 +13,7 @@ import           Werewolf.API
 import           Werewolf.ThemeInfo
 import qualified Werewolf.V1.Server.Handler as V1
 import qualified Werewolf.V2.Server.Handler as V2
+import           Werewolf.V3.DB             (DB (..), emptyDB)
 import qualified Werewolf.V3.Server.Handler as V3
 import           Werewolf.Werewolf
 
@@ -24,12 +27,18 @@ server = showIndex
     :<|> V2.handler
     :<|> V3.handler
 
-hoistWerewolf :: TVar [ThemeInfo] -> ServerT API Werewolf -> Server API
-hoistWerewolf s = hoistServer api $ fmap fst . flip runWerewolf s
+hoistWerewolf :: AcidState DB -> TVar [ThemeInfo] -> ServerT API Werewolf -> Server API
+hoistWerewolf a t s = do
+    hoistServer api f s
+    where
+    f :: Werewolf a -> Handler a
+    f w = fst <$> runWerewolf w a t
 
 runServer :: IO ()
 runServer = do
     putStrLn "Listening on port 8080"
     themeInfo <- V1.loadBackup
-    s <- atomically $ newTVar themeInfo
-    Warp.run 8080 . serve api $ hoistWerewolf s server
+    tv <- atomically $ newTVar themeInfo
+    flip runContT return $ do
+        st' <- ContT $ bracket (openLocalStateFrom "db/v3" emptyDB) closeAcidState
+        liftIO . Warp.run 8080 . serve api $ hoistWerewolf st' tv server
