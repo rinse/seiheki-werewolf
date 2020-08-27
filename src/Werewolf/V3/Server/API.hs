@@ -64,7 +64,7 @@ type GetSeihekiComments = "v3"
 type GetSeihekiComment = "v3"
     :> "seihekis" :> Capture "seihekiId" SeihekiId
     :> "comments" :> Capture "seihekiCommentId" SeihekiCommentId
-    :> Get '[JSON] SeihekiComment
+    :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] SeihekiComment)
 
 -- |Preflight request
 type OptionsSeihekiUpvotes = "v3"

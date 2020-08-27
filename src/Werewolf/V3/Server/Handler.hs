@@ -85,8 +85,11 @@ getSeihekiComments seihekiId offset limit = do
         limit' = fromMaybe defaultLimit limit
     return $ makeResGetCollection offset' limit' commentMap'
 
-getSeihekiComment :: Dao.MonadSeihekiCommentDaoReadOnly m => SeihekiId -> SeihekiCommentId -> m SeihekiComment
-getSeihekiComment _ = Dao.lookupSeihekiComment
+getSeihekiComment :: (Monad m, Dao.MonadSeihekiCommentDaoReadOnly m)
+                  => SeihekiId -> SeihekiCommentId -> m (Headers '[AccessControlAllowOriginHeader] SeihekiComment)
+getSeihekiComment _ seihekiCommentId = do
+    seihekiComment <- Dao.lookupSeihekiComment seihekiCommentId
+    return $ addHeader accessControlAllowOrigin seihekiComment
 
 optionsSeihekiUpvotes :: (Monad m, Dao.MonadSeihekiDaoReadOnly m)
                       => SeihekiId -> m (OptionsHeaders NoContent)
