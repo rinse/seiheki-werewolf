@@ -21,6 +21,7 @@ type SeihekiCommentId = PrimaryKey
 data SeihekiComment = SeihekiComment
     { commentContent :: Text    -- ^Comment
     , commentAuthor  :: Text    -- ^Author
+    , commentUpvotes :: Int     -- ^Upvotes
     } deriving (Read, Show, Generic)
 
 instance NFData SeihekiComment
