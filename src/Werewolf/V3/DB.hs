@@ -66,6 +66,14 @@ putDeck deck = do
     db@DB{..} <- get
     put $ db {deckDB = deck}
 
+getHistory :: Query DB History
+getHistory = historyDB <$> ask
+
+addHistory :: SeihekiId -> Update DB ()
+addHistory seihekiId = do
+    db@DB{..} <- get
+    put $ db {historyDB = History $ seihekiId:unHistory historyDB}
+
 $(makeAcidic ''DB
     [ 'lookupSeiheki
     , 'insertSeiheki
@@ -77,4 +85,6 @@ $(makeAcidic ''DB
     , 'getSeihekiComments
     , 'getDeck
     , 'putDeck
+    , 'getHistory
+    , 'addHistory
     ])

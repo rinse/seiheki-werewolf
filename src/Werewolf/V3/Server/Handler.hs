@@ -24,7 +24,6 @@ import qualified Werewolf.V3.DB               as DB
 import qualified Werewolf.V3.DB.Class         as DB
 import           Werewolf.V3.Deck             (Deck (..))
 import           Werewolf.V3.History
-import qualified Werewolf.V3.HistoryDao.Class as Dao
 import           Werewolf.V3.Seiheki
 import           Werewolf.V3.SeihekiComment
 import           Werewolf.V3.Server.API
@@ -35,7 +34,6 @@ accessControlAllowOrigin = "*"  -- "rinse.github.io"
 
 handler :: (MonadIO m, MonadError ServerError m, MonadRandom m
         , DB.MonadDB m
-        , Dao.MonadHistoryDao m
         ) => ServerT API m
 handler = postSeihekis :<|> getSeihekis
     :<|> getSeiheki
@@ -132,11 +130,11 @@ patchSeihekiUpvotes seihekiId PatchRequest {..} = do
     A.update' db $ DB.InsertSeiheki seihekiId seiheki' {seihekiUpvotes = seihekiUpvotes + 1}
     return $ addHeader accessControlAllowOrigin NoContent
 
-postCards :: (MonadIO m, MonadRandom m, DB.MonadDB m, Dao.MonadHistoryDaoReadOnly m)
+postCards :: (MonadIO m, MonadRandom m, DB.MonadDB m)
           => m (Headers '[AccessControlAllowOriginHeader] NoContent)
 postCards = do
     db <- DB.getAcidState
-    history <- unHistory <$> Dao.getHistory
+    history <- unHistory <$> A.query' db DB.GetHistory
     seihekiMap <- flip M.withoutKeys (S.fromList history) <$> A.query' db DB.GetSeihekis
     seihekiMap' <- groupedShuffle (seihekiAuthor . snd) (M.assocs seihekiMap)
     A.update' db . DB.PutDeck . Deck $ fst <$> seihekiMap'
@@ -168,7 +166,7 @@ optionsCard  seihekiId = do
          . addHeader 600
          $ addHeader "Origin" NoContent
 
-deleteCard :: (MonadIO m, MonadError ServerError m, DB.MonadDB m, Dao.MonadHistoryDao m) => SeihekiId -> m NoContent
+deleteCard :: (MonadIO m, MonadError ServerError m, DB.MonadDB m) => SeihekiId -> m NoContent
 deleteCard seihekiId = do
     db <- DB.getAcidState
     deck <- unDeck <$> A.query' db DB.GetDeck
@@ -176,17 +174,18 @@ deleteCard seihekiId = do
     newDeck <- case t of
         [] -> throwError err404
         (x:xs) -> do
-            Dao.addHistory x
+            A.update' db $ DB.AddHistory x
             return $ h <> xs
     A.update' db . DB.PutDeck $ Deck newDeck
     return NoContent
 
-getHistories :: (MonadIO m, MonadError ServerError m, DB.MonadDB m, Dao.MonadHistoryDaoReadOnly m)
+getHistories :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
              => Maybe Int -> Maybe Int
              -> m (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId [(SeihekiId, Seiheki)]))
 getHistories offset limit = do
     for_ limit $ validateLimitation 100
-    seihekiIds <- unHistory <$> Dao.getHistory
+    db <- DB.getAcidState
+    seihekiIds <- unHistory <$> A.query' db DB.GetHistory
     seihekiMap <- catMaybes <$> withSeihekiBody seihekiIds
     let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
