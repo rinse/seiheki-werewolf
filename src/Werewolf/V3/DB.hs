@@ -58,6 +58,14 @@ postSeihekiComment item = do
 getSeihekiComments :: Query DB (M.Map SeihekiCommentId SeihekiComment)
 getSeihekiComments = seihekiCommentDB <$> ask
 
+getDeck :: Query DB Deck
+getDeck = deckDB <$> ask
+
+putDeck :: Deck -> Update DB ()
+putDeck deck = do
+    db@DB{..} <- get
+    put $ db {deckDB = deck}
+
 $(makeAcidic ''DB
     [ 'lookupSeiheki
     , 'insertSeiheki
@@ -67,4 +75,6 @@ $(makeAcidic ''DB
     , 'insertSeihekiComment
     , 'postSeihekiComment
     , 'getSeihekiComments
+    , 'getDeck
+    , 'putDeck
     ])
