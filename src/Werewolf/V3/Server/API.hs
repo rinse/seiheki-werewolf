@@ -51,7 +51,7 @@ type PostSeihekiComments = "v3"
     :> "seihekis" :> Capture "id" SeihekiId
     :> "comments"
     :> ReqBody '[JSON, FormUrlEncoded] SeihekiComment
-    :> PostCreated '[JSON] (Headers '[LocationHeader] (Res201 SeihekiCommentId))
+    :> PostCreated '[JSON] (Headers '[AccessControlAllowOriginHeader, LocationHeader] (Res201 SeihekiCommentId))
 -- |Retrieves seiheki comments
 type GetSeihekiComments = "v3"
     :> "seihekis" :> Capture "id" SeihekiId

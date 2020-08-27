@@ -66,13 +66,15 @@ getSeiheki = Dao.lookupSeiheki
 
 postSeihekiComments :: (Monad m, Dao.MonadSeihekiDao m, Dao.MonadSeihekiCommentDao m)
                     => SeihekiId -> SeihekiComment
-                    -> m (Headers '[Header "Location" String] (Res201 SeihekiCommentId))
+                    -> m (Headers '[AccessControlAllowOriginHeader, LocationHeader] (Res201 SeihekiCommentId))
 postSeihekiComments seihekiId seihekiComment = do
     _ <- Dao.lookupSeiheki seihekiId
     seihekiCommentId <- Dao.postSeihekiComment seihekiComment
     _ <- flip Dao.patchSeiheki seihekiId $ \s@Seiheki {..} ->
         s {seihekiCommentIds = seihekiCommentId:seihekiCommentIds}
-    return $ addHeader ("/v3/seihekis" /~ show seihekiId /~ "comments" /~ show seihekiCommentId) (res201 seihekiCommentId)
+    return
+        . addHeader accessControlAllowOrigin
+        $ addHeader ("/v3/seihekis" /~ show seihekiId /~ "comments" /~ show seihekiCommentId) (res201 seihekiCommentId)
 
 getSeihekiComments :: (MonadError ServerError m, Dao.MonadSeihekiDaoReadOnly m, Dao.MonadSeihekiCommentDaoReadOnly m)
                    => SeihekiId -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiCommentId SeihekiCommentMap)
