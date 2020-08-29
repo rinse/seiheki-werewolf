@@ -21,9 +21,10 @@ import           Werewolf.V3.SeihekiComment
 
 type API = PostSeihekis :<|> GetSeihekis
     :<|> GetSeiheki
+    :<|> OptionsSeihekiUpvotes :<|> PatchSeihekiUpvotes
     :<|> PostSeihekiComments :<|> GetSeihekiComments
     :<|> GetSeihekiComment
-    :<|> OptionsSeihekiUpvotes :<|> PatchSeihekiUpvotes
+    :<|> OptionsSeihekiCommentUpvotes :<|> PatchSeihekiCommentUpvotes
     :<|> PostCards :<|> GetCards
     :<|> OptionsCard :<|> DeleteCard
     :<|> GetHistories
@@ -46,6 +47,18 @@ type GetSeiheki = "v3"
     :> "seihekis" :> Capture "id" SeihekiId
     :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] Seiheki)
 
+-- |Preflight request
+type OptionsSeihekiUpvotes = "v3"
+    :> "seihekis" :> Capture "seihekiId" SeihekiId
+    :> "upvotes"
+    :> Verb 'OPTIONS 204 '[JSON] (OptionsHeaders NoContent)
+-- |Gives an upvote to a seiheki
+type PatchSeihekiUpvotes = "v3"
+    :> "seihekis" :> Capture "seihekiId" SeihekiId
+    :> "upvotes"
+    :> ReqBody '[JSON, FormUrlEncoded] PatchRequest
+    :> PatchNoContent '[JSON] (Headers '[AccessControlAllowOriginHeader] NoContent)
+
 -- |Posts a comment and retrieve all comments on a seiheki
 type PostSeihekiComments = "v3"
     :> "seihekis" :> Capture "id" SeihekiId
@@ -67,13 +80,15 @@ type GetSeihekiComment = "v3"
     :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] SeihekiComment)
 
 -- |Preflight request
-type OptionsSeihekiUpvotes = "v3"
+type OptionsSeihekiCommentUpvotes = "v3"
     :> "seihekis" :> Capture "seihekiId" SeihekiId
+    :> "comments" :> Capture "seihekiCommentId" SeihekiCommentId
     :> "upvotes"
     :> Verb 'OPTIONS 204 '[JSON] (OptionsHeaders NoContent)
--- |Gives an upvote to a seiheki
-type PatchSeihekiUpvotes = "v3"
+-- |Gives an upvote to a seiheki comment
+type PatchSeihekiCommentUpvotes = "v3"
     :> "seihekis" :> Capture "seihekiId" SeihekiId
+    :> "comments" :> Capture "seihekiCommentId" SeihekiCommentId
     :> "upvotes"
     :> ReqBody '[JSON, FormUrlEncoded] PatchRequest
     :> PatchNoContent '[JSON] (Headers '[AccessControlAllowOriginHeader] NoContent)

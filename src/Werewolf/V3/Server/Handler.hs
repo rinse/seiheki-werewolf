@@ -37,9 +37,10 @@ handler :: (MonadIO m, MonadError ServerError m, MonadRandom m
         ) => ServerT API m
 handler = postSeihekis :<|> getSeihekis
     :<|> getSeiheki
+    :<|> optionsSeihekiUpvotes :<|> patchSeihekiUpvotes
     :<|> postSeihekiComments :<|> getSeihekiComments
     :<|> getSeihekiComment
-    :<|> optionsSeihekiUpvotes :<|> patchSeihekiUpvotes
+    :<|> optionsSeihekiCommentUpvotes :<|> patchSeihekiCommentUpvotes
     :<|> postCards :<|> getCards
     :<|> optionsCard :<|> deleteCard
     :<|> getHistories
@@ -69,6 +70,32 @@ getSeiheki seihekiId = do
     seiheki <- A.query' db $ DB.LookupSeiheki seihekiId
     seiheki' <- maybe (throwError err404) return seiheki
     return $ addHeader accessControlAllowOrigin seiheki'
+
+optionsSeihekiUpvotes :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
+                      => SeihekiId -> m (OptionsHeaders NoContent)
+optionsSeihekiUpvotes seihekiId = do
+    db <- DB.getAcidState
+    seiheki <- A.query' db $ DB.LookupSeiheki seihekiId
+    case seiheki of
+        Nothing -> throwError err404
+        Just _ -> return ()
+    return
+         . addHeader accessControlAllowOrigin
+         . addHeader "PATCH, OPTIONS"
+         . addHeader "*"
+         . addHeader 600
+         $ addHeader "Origin" NoContent
+
+patchSeihekiUpvotes :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
+                   => SeihekiId -> PatchRequest -> m (Headers '[AccessControlAllowOriginHeader] NoContent)
+patchSeihekiUpvotes seihekiId PatchRequest {..} = do
+    when (patchOp /= "increment") $
+        throwError err400 {errBody = LT.encodeUtf8 . LT.fromStrict $ patchOp <> " is not allowed as op."}
+    db <- DB.getAcidState
+    seiheki <- A.query' db $ DB.LookupSeiheki seihekiId
+    seiheki'@Seiheki{..} <- maybe (throwError err404) return seiheki
+    A.update' db $ DB.InsertSeiheki seihekiId seiheki' {seihekiUpvotes = seihekiUpvotes + 1}
+    return $ addHeader accessControlAllowOrigin NoContent
 
 postSeihekiComments :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
                     => SeihekiId -> SeihekiComment
@@ -105,12 +132,12 @@ getSeihekiComment _ seihekiCommentId = do
     seihekiComment' <- maybe (throwError err404) return seihekiComment
     return $ addHeader accessControlAllowOrigin seihekiComment'
 
-optionsSeihekiUpvotes :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
-                      => SeihekiId -> m (OptionsHeaders NoContent)
-optionsSeihekiUpvotes seihekiId = do
+optionsSeihekiCommentUpvotes :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
+                             => SeihekiId -> SeihekiCommentId -> m (OptionsHeaders NoContent)
+optionsSeihekiCommentUpvotes _ seihekiCommentId = do
     db <- DB.getAcidState
-    seiheki <- A.query' db $ DB.LookupSeiheki seihekiId
-    case seiheki of
+    seihekiComment <- A.query' db $ DB.LookupSeihekiComment seihekiCommentId
+    case seihekiComment of
         Nothing -> throwError err404
         Just _ -> return ()
     return
@@ -120,15 +147,16 @@ optionsSeihekiUpvotes seihekiId = do
          . addHeader 600
          $ addHeader "Origin" NoContent
 
-patchSeihekiUpvotes :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
-                   => SeihekiId -> PatchRequest -> m (Headers '[AccessControlAllowOriginHeader] NoContent)
-patchSeihekiUpvotes seihekiId PatchRequest {..} = do
+patchSeihekiCommentUpvotes :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
+                           => SeihekiId -> SeihekiCommentId -> PatchRequest
+                           -> m (Headers '[AccessControlAllowOriginHeader] NoContent)
+patchSeihekiCommentUpvotes _ seihekiCommentId PatchRequest {..} = do
     when (patchOp /= "increment") $
         throwError err400 {errBody = LT.encodeUtf8 . LT.fromStrict $ patchOp <> " is not allowed as op."}
     db <- DB.getAcidState
-    seiheki <- A.query' db $ DB.LookupSeiheki seihekiId
-    seiheki'@Seiheki{..} <- maybe (throwError err404) return seiheki
-    A.update' db $ DB.InsertSeiheki seihekiId seiheki' {seihekiUpvotes = seihekiUpvotes + 1}
+    seihekiComment <- A.query' db $ DB.LookupSeihekiComment seihekiCommentId
+    seihekiComment'@SeihekiComment{..} <- maybe (throwError err404) return seihekiComment
+    A.update' db $ DB.InsertSeihekiComment seihekiCommentId seihekiComment' {commentUpvotes = commentUpvotes + 1}
     return $ addHeader accessControlAllowOrigin NoContent
 
 postCards :: (MonadIO m, MonadRandom m, DB.MonadDB m)
