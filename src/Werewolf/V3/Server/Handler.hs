@@ -63,11 +63,12 @@ getSeihekis author offset limit = do
         limit' = fromMaybe defaultLimit limit
     return . addHeader accessControlAllowOrigin $ makeResGetCollection offset' limit' seihekiMap'
 
-getSeiheki :: (MonadIO m, MonadError ServerError m, DB.MonadDB m) => SeihekiId -> m Seiheki
+getSeiheki :: (MonadIO m, MonadError ServerError m, DB.MonadDB m) => SeihekiId -> m (Headers '[AccessControlAllowOriginHeader] Seiheki)
 getSeiheki seihekiId = do
     db <- DB.getAcidState
     seiheki <- A.query' db $ DB.LookupSeiheki seihekiId
-    maybe (throwError err404) return seiheki
+    seiheki' <- maybe (throwError err404) return seiheki
+    return $ addHeader accessControlAllowOrigin seiheki'
 
 postSeihekiComments :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
                     => SeihekiId -> SeihekiComment

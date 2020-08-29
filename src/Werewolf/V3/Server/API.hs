@@ -44,7 +44,7 @@ type GetSeihekis  = "v3"
 -- |Retrieves a seiheki
 type GetSeiheki = "v3"
     :> "seihekis" :> Capture "id" SeihekiId
-    :> Get '[JSON] Seiheki
+    :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] Seiheki)
 
 -- |Posts a comment and retrieve all comments on a seiheki
 type PostSeihekiComments = "v3"
