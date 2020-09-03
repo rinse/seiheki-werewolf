@@ -40,7 +40,7 @@ type GetSeihekis  = "v3"
     :> QueryParam "author" Text
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId SeihekiMap))
+    :> Get '[JSON] (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId [(SeihekiId, Seiheki)]))
 
 -- |Retrieves a seiheki
 type GetSeiheki = "v3"
