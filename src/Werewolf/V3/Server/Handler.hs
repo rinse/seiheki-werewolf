@@ -112,17 +112,17 @@ postSeihekiComments seihekiId seihekiComment = do
         $ addHeader ("/v3/seihekis" /~ show seihekiId /~ "comments" /~ show seihekiCommentId) (res201 seihekiCommentId)
 
 getSeihekiComments :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
-                   => SeihekiId -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiCommentId SeihekiCommentMap)
+                   => SeihekiId -> Maybe Int -> Maybe Int -> m (ResGetCollection SeihekiCommentId [(SeihekiCommentId, SeihekiComment)])
 getSeihekiComments seihekiId offset limit = do
     db <- DB.getAcidState
     seiheki <- A.query' db $ DB.LookupSeiheki seihekiId
     Seiheki {seihekiCommentIds = commentIds} <- maybe (throwError err404) return seiheki
     for_ limit $ validateLimitation 100
     commentMap <- A.query' db DB.GetSeihekiComments
-    let commentMap' = M.restrictKeys commentMap (S.fromList commentIds)
+    let commentMap' = M.toAscList $ M.restrictKeys commentMap (S.fromList commentIds)
         offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
-    return $ makeResGetCollection offset' limit' commentMap'
+    return $ makeResGetCollection' offset' limit' commentMap'
 
 getSeihekiComment :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
                   => SeihekiId -> SeihekiCommentId -> m (Headers '[AccessControlAllowOriginHeader] SeihekiComment)

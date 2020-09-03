@@ -9,7 +9,6 @@ module Werewolf.V3.Server.API where
 import           Control.DeepSeq            (NFData)
 import           Data.Aeson
 import           Data.Aeson.Casing
-import qualified Data.Map.Strict            as M
 import           Data.Maybe
 import           Data.Text                  (Text)
 import           GHC.Generics               (Generic)
@@ -71,7 +70,7 @@ type GetSeihekiComments = "v3"
     :> "comments"
     :> QueryParam "offset" Int
     :> QueryParam "limit" Int
-    :> Get '[JSON] (ResGetCollection SeihekiCommentId SeihekiCommentMap)
+    :> Get '[JSON] (ResGetCollection SeihekiCommentId [(SeihekiCommentId, SeihekiComment)])
 
 -- |Retrieves a comment on a seiheki
 type GetSeihekiComment = "v3"
@@ -179,17 +178,9 @@ instance (FromJSON offset, FromJSON a) => FromJSON (ResGetCollection offset a) w
 instance (ToJSON offset, ToJSON a) => ToJSON (ResGetCollection offset a) where
     toJSON = genericToJSON $ aesonPrefix camelCase
 
-{- |Smart constructor of `ResGetCollection`, specialized for `M.Map`.
+{- |Smart constructor of `ResGetCollection`, specialized for `[(k, v)]`.
     Perhaps DB should do this kind of things.
 -}
-makeResGetCollection :: Int -> Int -> M.Map k v -> ResGetCollection k (M.Map k v)
-makeResGetCollection offset limit m =
-    let dropped = M.drop offset m
-        resSizeRemains = max 0 (M.size dropped - limit)
-        (resCollection, rest) = M.splitAt limit dropped
-        resNextOffset = fst <$> M.lookupMin rest
-     in ResGetCollection {..}
-
 makeResGetCollection' :: Int -> Int -> [(k, v)] -> ResGetCollection k [(k, v)]
 makeResGetCollection' offset limit m =
     let dropped = drop offset m
