@@ -9,7 +9,6 @@ module Werewolf.V3.Server.API where
 import           Control.DeepSeq            (NFData)
 import           Data.Aeson
 import           Data.Aeson.Casing
-import           Data.Maybe
 import           Data.Text                  (Text)
 import           GHC.Generics               (Generic)
 import           Servant.API
@@ -168,7 +167,7 @@ instance FromForm PatchRequest
 -- |Response entity for GetCollection
 data ResGetCollection offset a = ResGetCollection
     { resSizeRemains :: Int
-    , resNextOffset  :: Maybe offset
+    , resNextOffset  :: offset
     , resCollection  :: a
     } deriving (Read, Show, Generic)
 
@@ -178,13 +177,21 @@ instance (FromJSON offset, FromJSON a) => FromJSON (ResGetCollection offset a) w
 instance (ToJSON offset, ToJSON a) => ToJSON (ResGetCollection offset a) where
     toJSON = genericToJSON $ aesonPrefix camelCase
 
+safeMaximum :: (Foldable f, Ord a) => f a -> Maybe a
+safeMaximum = foldr f Nothing
+    where
+    f a Nothing = Just a
+    f a (Just b) = Just $ max a b
+
 {- |Smart constructor of `ResGetCollection`, specialized for `[(k, v)]`.
     Perhaps DB should do this kind of things.
 -}
-makeResGetCollection' :: Int -> Int -> [(k, v)] -> ResGetCollection k [(k, v)]
+makeResGetCollection' :: (Enum k, Ord k) => Int -> Int -> [(k, v)] -> ResGetCollection k [(k, v)]
 makeResGetCollection' offset limit m =
     let dropped = drop offset m
         resSizeRemains = max 0 (length dropped - limit)
         (resCollection, rest) = splitAt limit dropped
-        resNextOffset = fst <$> listToMaybe rest
+        resNextOffset = case rest of
+            (x:_) -> fst x
+            _ -> maybe (toEnum 0) succ (safeMaximum $ fst <$> resCollection)
      in ResGetCollection {..}
