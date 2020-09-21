@@ -54,15 +54,21 @@ postSeihekis seiheki = do
     return . addHeader accessControlAllowOrigin $ addHeader ("/v3/seihekis" /~ show seihekiId) (res201 seihekiId)
 
 getSeihekis :: (MonadIO m, MonadError ServerError m, DB.MonadDB m)
-            => Maybe T.Text -> Maybe Int -> Maybe Int -> m (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId [(SeihekiId, Seiheki)]))
-getSeihekis author offset limit = do
+            => Maybe T.Text -> Maybe Int -> Maybe Int -> [String]
+            -> m (Headers '[AccessControlAllowOriginHeader] (ResGetCollection SeihekiId [(SeihekiId, Seiheki)]))
+getSeihekis author offset limit q = do
     for_ limit $ validateLimitation 100
     db <- DB.getAcidState
     seihekiMap <- A.query' db DB.GetSeihekis
     let seihekiMap' = M.filter (\s -> maybe True (== seihekiAuthor s) author) seihekiMap
-        offset' = fromMaybe defaultOffset offset
+    seihekiMap'' <- if "exclude-history" `elem` q
+        then do
+            history <- unHistory <$> A.query' db DB.GetHistory
+            return $ M.withoutKeys seihekiMap' (S.fromList history)
+        else return seihekiMap'
+    let offset' = fromMaybe defaultOffset offset
         limit' = fromMaybe defaultLimit limit
-    return . addHeader accessControlAllowOrigin . makeResGetCollection' offset' limit' $ M.toAscList seihekiMap'
+    return . addHeader accessControlAllowOrigin . makeResGetCollection' offset' limit' $ M.toAscList seihekiMap''
 
 getSeiheki :: (MonadIO m, MonadError ServerError m, DB.MonadDB m) => SeihekiId -> m (Headers '[AccessControlAllowOriginHeader] Seiheki)
 getSeiheki seihekiId = do
