@@ -5,17 +5,15 @@ import           Control.Exception.Safe     (bracket)
 import           Control.Monad.Cont
 import           Data.Acid
 import qualified Network.Wai.Handler.Warp   as Warp
-import           Servant.API
 import           Servant.Server
 import           Werewolf.API
-import qualified Werewolf.V2.Server.Handler as V2
 import           Werewolf.V3.DB             (DB (..), emptyDB)
 import qualified Werewolf.V3.Server.Handler as V3
 import           Werewolf.Werewolf
 
 
 server :: ServerT API Werewolf
-server = V2.handler :<|> V3.handler
+server = V3.handler
 
 hoistWerewolf :: AcidState DB -> ServerT API Werewolf -> Server API
 hoistWerewolf a s = do
