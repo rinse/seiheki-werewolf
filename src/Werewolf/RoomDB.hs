@@ -102,3 +102,4 @@ closeRoomDB = liftIO . closeAcidState
 
 withRoomDB :: (MonadIO m, MonadMask m) => (AcidState RoomDB -> m a) -> m a
 withRoomDB = bracket openLocalRoomDB closeRoomDB
+

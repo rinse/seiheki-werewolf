@@ -29,6 +29,7 @@ ghc-options:
 dependencies:
 - acid-state
 - aeson
+- aeson-casing
 - base >= 4.7 && < 5
 - bytestring
 - containers
@@ -44,6 +45,7 @@ dependencies:
 - safe-exceptions
 - stm
 - text
+- transformers
 - uuid
 - warp
 
