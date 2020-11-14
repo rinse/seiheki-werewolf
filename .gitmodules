@@ -1,0 +1,3 @@
+[submodule "seiheki-werewolf-front"]
+	path = seiheki-werewolf-front
+	url = https://github.com/rinse/seiheki-werewolf-front.git
