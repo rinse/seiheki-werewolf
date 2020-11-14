@@ -43,7 +43,6 @@ dependencies:
 - servant-server
 - safecopy
 - safe-exceptions
-- stm
 - text
 - transformers
 - uuid
