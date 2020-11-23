@@ -46,6 +46,8 @@ dependencies:
 - text
 - transformers
 - uuid
+- wai
+- wai-middleware-static
 - warp
 
 library:
