@@ -5,10 +5,13 @@ import           Control.Exception.Safe        (bracket)
 import           Control.Monad.Cont
 import           Data.Acid
 import           Data.Foldable                 (fold)
+import           Data.Maybe                    (fromMaybe)
 import qualified Network.Wai                   as Wai
 import qualified Network.Wai.Handler.Warp      as Warp
 import qualified Network.Wai.Middleware.Static as Wai
 import           Servant.Server
+import           System.Environment            (lookupEnv)
+import           Text.Read                     (readMaybe)
 import           Werewolf.API
 import           Werewolf.V3.DB                (DB (..), emptyDB)
 import qualified Werewolf.V3.Server.Handler    as V3
@@ -46,9 +49,26 @@ middleware = Wai.staticPolicy $ fold
     [ policy' $ replace "seiheki-werewolf-front" "./seiheki-werewolf-front/build"
     ]
 
+portEnvKey :: String
+portEnvKey = "SEIHEKI_WEREWOLF_PORT"
+
+defaultPort :: Warp.Port
+defaultPort = 8080
+
+dbEnvKey :: String
+dbEnvKey = "SEIHEKI_WEREWOLF_DB"
+
+defaultDB :: String
+defaultDB = "db"
+
 runServer :: IO ()
 runServer = do
-    putStrLn "Listening on port 8080"
+    port <- do
+        portMaybe <- lookupEnv portEnvKey
+        return . fromMaybe defaultPort $ portMaybe >>= readMaybe
+    db <- fromMaybe defaultDB <$> lookupEnv dbEnvKey
+    putStrLn $ "Listening on port " <> show port
+    putStrLn $ "Using DB at " <> db
     flip runContT return $ do
-        st <- ContT $ bracket (openLocalStateFrom "db/v3" emptyDB) closeAcidState
-        liftIO .  Warp.run 8080 $ app st
+        st <- ContT $ bracket (openLocalStateFrom (db <> "/v3") emptyDB) closeAcidState
+        liftIO . Warp.run port $ app st
