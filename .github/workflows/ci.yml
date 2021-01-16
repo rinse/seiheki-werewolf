@@ -1,0 +1,25 @@
+on: push
+
+jobs:
+  build:
+    name: ghc ${{ matrix.ghc }}
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        ghc: ["8.2.2", "8.4.4", "8.6.5", "8.8.3"]
+        cabal: ["3.0"]
+
+    steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 1
+      - uses: actions/cache@v2
+        with:
+          path: ~/.stack
+          key: ${{ matrix.ghc }}-stack-${{ hashFiles('stack.yaml.lock') }}
+      - name: Setup Haskell
+        uses: actions/setup-haskell@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+      - run: stack test
